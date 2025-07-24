@@ -16,20 +16,23 @@ include_directories(
 )
 
 # Add source files
-file(GLOB_RECURSE SRC_FILES
+file(GLOB_RECURSE FILES
     src/*.cpp
     src/*.hpp
     include/*.hpp
 )
 
 # Add executable
-add_executable(DIRECTX3D ${SRC_FILES})
+add_executable(
+    DIRECTX3D 
+    ${FILES}
+)
 
 # Link Windows libraries
 target_link_libraries(DIRECTX3D
     user32
     gdi32       # Common for window creation
-    d3d11       # DirectX 11
+    d3d12       # DirectX 12
     dxgi        # DXGI interface
     d3dcompiler # Shader compiler
 )

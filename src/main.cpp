@@ -1,26 +1,26 @@
-#include <windows.h>
+#include "core/pch/pch.h"
+
 
 // #define HInstance() GetModuleHandle(nullptr);
 
 INT windowWidth;
 INT windowHeight;
 
-LPCWSTR gAppName = L"DirectX Graphic Renderer";
+LPCWSTR appName;
+LPCWSTR windowClassName;
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        return 0;
-    }
-    return DefWindowProc(hwnd, msg, wParam, lParam);
+void initVariables() {
+    appName = L"DirectX Graphic Renderer";
+    windowClassName = L"DirectWindowClass";
+
+    windowWidth = 1440;
+    windowHeight = 768;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    windowWidth = 1440;
-    windowHeight = 768;
-
-    // Window Class
+    initVariables();
+    
+    // Create Window Class
     WNDCLASSEXW windowClass = {};
     windowClass.cbSize = sizeof(WNDCLASSEXW);
     windowClass.style = CS_HREDRAW | CS_VREDRAW;
@@ -33,7 +33,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     windowClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
     windowClass.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
 
-    windowClass.lpszClassName = L"DirectWindowClass";
+    windowClass.lpszClassName = windowClassName;
     windowClass.lpszMenuName = nullptr;
 
     windowClass.hInstance = hInstance;
@@ -49,8 +49,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     HWND hwnd = CreateWindowEx(
         0,
-        L"DirectWindowClass", // class name must match windowClass.lpszClassName
-        gAppName,            // window title
+        windowClassName, // class name must match windowClass.lpszClassName
+        appName,            // window title
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT,       // x
         0,       // y
@@ -81,4 +81,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     return 0;
+}
+
+LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            return 0;
+    }
+    return DefWindowProc(hwnd, msg, wParam, lParam);
 }
