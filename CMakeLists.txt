@@ -13,6 +13,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
 # Include directories
 include_directories(
     ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/src
 )
 
 # Add source files
@@ -37,7 +38,7 @@ target_link_libraries(DIRECTX3D
     d3dcompiler # Shader compiler
 )
 
-# Define UNICODE so MessageBox resolves to MessageBoxW
+# Define UNICODE
 target_compile_definitions(DIRECTX3D PRIVATE UNICODE _UNICODE)
 
 # (uses WinMain instead of main)
