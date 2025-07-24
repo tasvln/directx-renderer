@@ -1,4 +1,4 @@
-#include "core/pch.h"
+#include "utils/pch.h"
 #include "core/Win32Window.h"
 #include "engine/engine.h"
 
@@ -6,6 +6,8 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     std::unique_ptr<Engine> engine = std::make_unique<Engine>();
+    
+    LOG_INFO(L"Engine initialized");
     
     WindowConfig config;
     config.appName = L"DirectX Graphic Renderer";
