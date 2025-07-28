@@ -11,4 +11,13 @@ class Win32Window {
             HINSTANCE hInstance, 
             int nCmdShow
         );
+        
+        static HWND createWindow(
+            const wchar_t* windowClassName, 
+            HINSTANCE hInst,
+            const wchar_t* windowTitle, 
+            uint32_t width, 
+            uint32_t height
+        );
+    private:
 };

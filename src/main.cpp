@@ -14,6 +14,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     config.windowClassName = L"DirectWindowClass";
     config.width = 1440;
     config.height = 700;
+    config.isDirectXefied = false;
+    config.useWarp = false;
 
     engine->init();
 

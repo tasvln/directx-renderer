@@ -34,19 +34,12 @@ int Win32Window::winMain(
         return -1;
     }
 
-    HWND hwnd = CreateWindowEx(
-        0,
+    HWND hwnd = createWindow(
         config.windowClassName,
+        hInstance,
         config.appName,
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, 
-        CW_USEDEFAULT,
-        config.width, 
-        config.height,
-        nullptr, 
-        nullptr,
-        hInstance, 
-        nullptr
+        config.width,
+        config.height
     );
 
     if (!hwnd) {
@@ -69,4 +62,47 @@ int Win32Window::winMain(
     }
 
     return static_cast<int>(msg.wParam);
+}
+
+HWND Win32Window::createWindow(
+    LPCWSTR windowClassName, 
+    HINSTANCE hInstance,
+    LPCWSTR windowTitle, 
+    uint32_t width, 
+    uint32_t height
+) {
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+
+    RECT windowRect = {
+        0,
+        0,
+        static_cast<LONG>(width), 
+        static_cast<LONG>(height)
+    };
+
+    AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, false);
+
+    int windowWidth = windowRect.right - windowRect.left;
+    int windowHeight = windowRect.bottom - windowRect.top;
+
+    int windowX = std::max<int>(0, (screenWidth - windowWidth) / 2);
+    int windowY = std::max<int>(0, (screenHeight - windowHeight) / 2);
+
+    HWND hwnd = CreateWindowEx(
+        0,
+        windowClassName,
+        windowTitle,
+        WS_OVERLAPPEDWINDOW,
+        windowX, 
+        windowY,
+        windowWidth,
+        windowHeight,
+        nullptr, 
+        nullptr,
+        hInstance, 
+        nullptr
+    );
+
+    return hwnd;
 }

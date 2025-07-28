@@ -3,7 +3,7 @@
 #include <string>
 #include <fstream>
 #include <mutex>
-#include <Windows.h>
+#include <windows.h>
 #include <cstdarg>
 
 enum class LogType {
