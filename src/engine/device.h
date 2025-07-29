@@ -4,7 +4,7 @@
 
 class Device {
     public:
-        Device() = default;
+        Device(bool useWarp);
         ~Device() = default;
     
         void initialize(bool useWarp = false);
@@ -15,6 +15,8 @@ class Device {
         void enableDebugLayer();
         void enableDeviceDebugLayer(ComPtr<ID3D12Device2>& debugDevice);
 
+        bool checkForTearingSupport();
+
         // getters
         ComPtr<ID3D12Device2> getDevice() const { 
             return device; 
@@ -24,8 +26,14 @@ class Device {
             return adapter; 
         }
 
+        bool getSupportTearingState() const {
+            return supportTearing;
+        }
+
     private:
         ComPtr<IDXGIAdapter4> adapter;
         ComPtr<ID3D12Device2> device;
+
+        bool supportTearing = false;
 
 };

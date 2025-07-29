@@ -5,19 +5,42 @@
 
 class Win32Window {
     public:
-        static int winMain(
-            const WindowConfig& config, 
-            Engine& engine,
+        Win32Window(
+            WindowConfig& config,
             HINSTANCE hInstance, 
             int nCmdShow
         );
+        ~Win32Window() = default;
+
+        int run(
+            Engine& engine
+        );
+
+        HWND getHwnd() const {
+            return hwnd;
+        }
         
-        static HWND createWindow(
-            const wchar_t* windowClassName, 
-            HINSTANCE hInst,
-            const wchar_t* windowTitle, 
-            uint32_t width, 
-            uint32_t height
+        RECT getWindowRect() const {
+            return windowRect;
+        }
+
+        void setEngine(Engine* enginePtr);
+
+        
+        static LRESULT CALLBACK WndProc(
+            HWND hwnd, 
+            UINT msg, 
+            WPARAM wParam, 
+            LPARAM lParam
         );
     private:
+        WindowConfig& config;
+        Engine* engine = nullptr;
+        HWND hwnd = nullptr;
+        RECT windowRect = {};
+        HINSTANCE hInstance = nullptr;
+        
+        HWND createWindow(
+            int nCmdShow
+        );
 };

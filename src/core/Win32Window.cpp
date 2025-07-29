@@ -1,54 +1,29 @@
 #include "Win32Window.h"
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-        case WM_DESTROY:
-            PostQuitMessage(0);
-            return 0;
-    }
-    return DefWindowProc(hwnd, msg, wParam, lParam);
-}
-
-int Win32Window::winMain(
-    const WindowConfig& config,
-    Engine& engine,
-    HINSTANCE hInstance,
+Win32Window::Win32Window(
+    WindowConfig& config, 
+    HINSTANCE hInst, 
     int nCmdShow
-) {
-    WNDCLASSEXW windowClass = {};
-    windowClass.cbSize = sizeof(WNDCLASSEXW);
-    windowClass.style = CS_HREDRAW | CS_VREDRAW;
-    windowClass.lpfnWndProc = WndProc;
-    windowClass.cbClsExtra = 0;
-    windowClass.cbWndExtra = 0;
-    windowClass.hInstance = hInstance;
-    windowClass.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
-    windowClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    windowClass.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
-    windowClass.lpszMenuName = nullptr;
-    windowClass.lpszClassName = config.windowClassName;
-    windowClass.hIconSm = LoadIcon(nullptr, IDI_APPLICATION);
-
-    if (!RegisterClassEx(&windowClass)) {
-        MessageBox(0, L"RegisterClassEx failed!", 0, 0);
-        return -1;
-    }
-
-    HWND hwnd = createWindow(
-        config.windowClassName,
-        hInstance,
-        config.appName,
-        config.width,
-        config.height
-    );
+)   : 
+    hInstance(hInst),
+    config(config)
+{
+    hwnd = createWindow(nCmdShow);
+    LOG_INFO(L"createWindow(nCmdShow)");
 
     if (!hwnd) {
-        MessageBox(0, L"CreateWindowEx failed!", 0, 0);
-        return -1;
+        DWORD err = GetLastError();  // Capture error immediately
+        wchar_t buf[256];
+        wsprintf(buf, L"CreateWindowEx failed! Error code: %lu", err);
+        MessageBox(0, buf, L"Win32 Error", 0);
+        throw std::runtime_error("CreateWindowEx failed");
     }
+}
 
-    ShowWindow(hwnd, nCmdShow);
-    
+int Win32Window::run(Engine& engine) {
+    SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(&engine));
+
+    ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
 
     MSG msg = {};
@@ -64,22 +39,17 @@ int Win32Window::winMain(
     return static_cast<int>(msg.wParam);
 }
 
-HWND Win32Window::createWindow(
-    LPCWSTR windowClassName, 
-    HINSTANCE hInstance,
-    LPCWSTR windowTitle, 
-    uint32_t width, 
-    uint32_t height
-) {
+HWND Win32Window::createWindow(int nCmdShow) {
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-    RECT windowRect = {
+    windowRect = {
         0,
         0,
-        static_cast<LONG>(width), 
-        static_cast<LONG>(height)
+        static_cast<LONG>(config.width),
+        static_cast<LONG>(config.height)
     };
+    LOG_INFO(L"windowRect set");
 
     AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, false);
 
@@ -89,20 +59,86 @@ HWND Win32Window::createWindow(
     int windowX = std::max<int>(0, (screenWidth - windowWidth) / 2);
     int windowY = std::max<int>(0, (screenHeight - windowHeight) / 2);
 
-    HWND hwnd = CreateWindowEx(
+    LOG_INFO(L"windowX & windowY");
+
+    return CreateWindowEx(
         0,
-        windowClassName,
-        windowTitle,
+        config.windowClassName,
+        config.appName,
         WS_OVERLAPPEDWINDOW,
-        windowX, 
+        windowX,
         windowY,
         windowWidth,
         windowHeight,
-        nullptr, 
         nullptr,
-        hInstance, 
-        nullptr
+        nullptr,
+        hInstance,
+        this
     );
+}
 
-    return hwnd;
+void Win32Window::setEngine(Engine* enginePtr) {
+    engine = enginePtr;
+    
+    LOG_INFO(L"Engine Set in Window Class");
+}
+
+LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    Win32Window* window = reinterpret_cast<Win32Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+
+    if (msg == WM_NCCREATE) {
+        CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
+        window = reinterpret_cast<Win32Window*>(pCreate->lpCreateParams);
+        SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
+        return DefWindowProc(hwnd, msg, wParam, lParam);  // Return default processing result
+    }
+
+    if (window && window->config.enabledDirectX) {
+        Engine* engine = window->engine;
+
+        switch (msg) {
+            case WM_PAINT:
+                engine->update();
+                engine->render();
+                return 0;
+
+            case WM_SYSKEYDOWN:
+            case WM_KEYDOWN: {
+                bool alt = (::GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
+                switch (wParam) {
+                    case 'V':
+                        window->config.vsync = !window->config.vsync;
+                        break;
+                    case VK_ESCAPE:
+                        ::PostQuitMessage(0);
+                        break;
+                    case VK_RETURN:
+                    case VK_F11:
+                        if (alt) {
+                            engine->setFullScreen(!window->config.fullscreen);
+                        }
+                        break;
+                }
+                return 0;
+            }
+
+            case WM_SIZE: {
+                RECT clientRect = {};
+                GetClientRect(hwnd, &clientRect);
+                int width = clientRect.right - clientRect.left;
+                int height = clientRect.bottom - clientRect.top;
+                engine->resize(width, height);
+                return 0;
+            }
+
+            case WM_DESTROY:
+                PostQuitMessage(0);
+                return 0;
+
+            default:
+                return DefWindowProc(hwnd, msg, wParam, lParam);
+        }
+    } else {
+        return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
 }

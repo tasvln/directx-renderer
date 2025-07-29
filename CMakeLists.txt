@@ -29,13 +29,18 @@ add_executable(
     ${FILES}
 )
 
+find_package(directx-headers CONFIG REQUIRED)
+
 # Link Windows libraries
-target_link_libraries(DIRECTX3D
-    user32
-    gdi32       # Common for window creation
-    d3d12       # DirectX 12
-    dxgi        # DXGI interface
-    d3dcompiler # Shader compiler
+target_link_libraries(
+    DIRECTX3D
+    PRIVATE
+        user32
+        gdi32       # Common for window creation
+        d3d12       # DirectX 12
+        dxgi        # DXGI interface
+        d3dcompiler # Shader compiler
+        Microsoft::DirectX-Headers
 )
 
 # Define UNICODE

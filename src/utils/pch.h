@@ -15,6 +15,7 @@
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
 #include <d3d12.h>
+#include <directx/d3dx12.h>
 
 #include <iostream>
 #include <algorithm>
@@ -44,11 +45,11 @@ struct WindowConfig {
     LPCWSTR windowClassName;
     uint32_t width;
     uint32_t height;
-    bool isDirectXefied;
+    bool enabledDirectX;
     bool useWarp;
-    // bool vsync = true;
-    // bool fullscreen = false;
-    // bool resizable = true;
+    bool vsync = true;
+    bool fullscreen = false;
+    bool resizable = true;
 };
 
 // Window handle.
