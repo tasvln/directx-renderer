@@ -6,15 +6,17 @@ Device::Device(bool useWarp) {
     supportTearing = checkForTearingSupport();
 
     adapter = selectAdapter(useWarp);
+
     device = createDevice(adapter);
 
-    LOG_INFO(L"DirectX 12 device initialized.");
+    LOG_INFO(L"Device->DirectX 12 device initialized.");
 }
 
 ComPtr<IDXGIAdapter4> Device::selectAdapter(bool useWarp) {
     ComPtr<IDXGIFactory4> dxgiFactory;
     ComPtr<IDXGIAdapter1> dxgiAdapter1;
     ComPtr<IDXGIAdapter4> dxgiAdapter4;
+    LOG_INFO(L"selectAdapter vars");
 
     UINT createFactoryFlags = 0;
 
@@ -22,32 +24,35 @@ ComPtr<IDXGIAdapter4> Device::selectAdapter(bool useWarp) {
         createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
     #endif
 
+    LOG_INFO(L"CreateDXGIFactory2 before!");
     throwFailed(CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory)));
+    LOG_INFO(L"CreateDXGIFactory2 initialized!");
 
     if (useWarp)
     {
         throwFailed(dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&dxgiAdapter1)));
         throwFailed(dxgiAdapter1.As(&dxgiAdapter4));
     } else {
+        ComPtr<IDXGIAdapter1> bestAdapter1;
         size_t maxDedicatedVideoMemory = 0;
+        LOG_INFO(L"maxDedicatedVideoMemory = 0!");
 
-        // enumerate the available GPU adapters in the system
         for (UINT i = 0; dxgiFactory->EnumAdapters1(i, &dxgiAdapter1) != DXGI_ERROR_NOT_FOUND; ++i)
         {
             DXGI_ADAPTER_DESC1 desc;
             dxgiAdapter1->GetDesc1(&desc);
 
-            // Check to see if the adapter can create a D3D12 device without actually 
-            // creating it. The adapter with the largest dedicated video memory
-            // is favored.
-            
             if ((desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) == 0 &&
                 SUCCEEDED(D3D12CreateDevice(dxgiAdapter1.Get(), D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), nullptr)) &&
                 desc.DedicatedVideoMemory > maxDedicatedVideoMemory
             ) {
                 maxDedicatedVideoMemory = desc.DedicatedVideoMemory;
-                throwFailed(dxgiAdapter1.As(&dxgiAdapter4));
+                bestAdapter1 = dxgiAdapter1;
             }
+        }
+
+        if (bestAdapter1) {
+            throwFailed(bestAdapter1.As(&dxgiAdapter4));
         }
     }
 
@@ -121,6 +126,8 @@ void Device::enableDebugLayer() {
 
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
             debugController->EnableDebugLayer();
+        } else {
+            LOG_ERROR(L"Failed to enable debug layer!");
         }
     #endif
 }

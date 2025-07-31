@@ -1,6 +1,5 @@
 #include "swapchain.h"
 
-
 Swapchain::Swapchain(
     HWND hwnd, 
     ComPtr<ID3D12CommandQueue> commandQueue, 
@@ -17,6 +16,8 @@ Swapchain::Swapchain(
         bufferCount,
         tearingSupport
     );
+    
+    LOG_INFO(L"Swapchain->Created Swapchain");
 }
 
 ComPtr<IDXGISwapChain4>Swapchain::createSwapchain(

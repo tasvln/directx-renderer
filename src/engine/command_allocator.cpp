@@ -5,7 +5,7 @@ CommandAllocator::CommandAllocator(
     D3D12_COMMAND_LIST_TYPE type
 ) {
     allocator = createCommandAllocator(device, type);
-    LOG_INFO(L"Created Command Allocator");
+    LOG_INFO(L"CommandAllocator->Created Command Allocator");
 }
 
 ComPtr<ID3D12CommandAllocator> CommandAllocator::createCommandAllocator(

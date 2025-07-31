@@ -13,15 +13,13 @@ Engine::Engine(
     device = std::make_unique<Device>(
         config.useWarp
     );
-    
-    LOG_INFO(L"DirectX 12 device initialized.");
+    LOG_INFO(L"Engine->DirectX 12 device initialized.");
 
     commandQueue = std::make_unique<CommandQueue>(
         device->getDevice(),
         D3D12_COMMAND_LIST_TYPE_DIRECT
     );
-    
-    LOG_INFO(L"DirectX 12 commandQueue initialized.");
+    LOG_INFO(L"Engine->DirectX 12 commandQueue initialized.");
 
     swapchain = std::make_unique<Swapchain>(
         hwnd,
@@ -31,36 +29,30 @@ Engine::Engine(
         FRAMEBUFFERCOUNT,
         device->getSupportTearingState()
     );
-    
-    LOG_INFO(L"DirectX 12 swapchain initialized.");
+    LOG_INFO(L"Engine->DirectX 12 swapchain initialized.");
 
     currentIndex = swapchain->getSwapchain().Get()->GetCurrentBackBufferIndex();
-
-    LOG_INFO(L"DirectX 12 currentIndex set.");
+    LOG_INFO(L"Engine->DirectX 12 currentIndex set.");
 
     rtvHeap = swapchain->createDescriptorHeap(
         device->getDevice(),
         D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
         FRAMEBUFFERCOUNT
     );
-
-    LOG_INFO(L"DirectX 12 rtvHeap initialized.");
+    LOG_INFO(L"Engine->DirectX 12 rtvHeap initialized.");
 
     rtvDescriptorSize = device->getDevice().Get()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-
-    LOG_INFO(L"DirectX 12 rtvDescriptorSize set.");
+    LOG_INFO(L"Engine->DirectX 12 rtvDescriptorSize set.");
 
     swapchain->updateRTVs(
         device->getDevice(),
         swapchain->getSwapchain(),
         rtvHeap
     );
-
-    LOG_INFO(L"DirectX 12 rtvs updated.");
+    LOG_INFO(L"Engine->DirectX 12 rtvs updated.");
 
     commandAllocators.resize(FRAMEBUFFERCOUNT);
-
-    LOG_INFO(L"DirectX 12 commandAllocators resized");
+    LOG_INFO(L"Engine->DirectX 12 commandAllocators resized");
 
     for (int i = 0; i < FRAMEBUFFERCOUNT; ++i) {
         commandAllocators[i] = std::make_unique<CommandAllocator>(
@@ -68,33 +60,26 @@ Engine::Engine(
             D3D12_COMMAND_LIST_TYPE_DIRECT
         );
     }
-
-    LOG_INFO(L"DirectX 12 commandAllocators set.");
+    LOG_INFO(L"Engine->DirectX 12 commandAllocators set.");
 
     commandList = std::make_unique<CommandList>(
         device->getDevice(), 
         commandAllocators[currentIndex]->getAllocator(), 
         D3D12_COMMAND_LIST_TYPE_DIRECT
     );
-
-    LOG_INFO(L"DirectX 12 commandList initialized.");
+    LOG_INFO(L"Engine->DirectX 12 commandList initialized.");
 
     fence = std::make_unique<Fence>(device->getDevice());
-
-    LOG_INFO(L"DirectX 12 fence initialized.");
+    LOG_INFO(L"Engine->DirectX 12 fence initialized.");
 
     config.enabledDirectX = true;
-
-    LOG_INFO(L"DirectX 12 enabledDirectX set");
-
-    fence->flush(commandQueue->getQueue());
-    LOG_INFO(L"fence->flush(commandQueue->getQueue()); called");
 }
 
 Engine::~Engine() = default;
 
 void Engine::init() {
-    MessageBox(0, L"Engine initialized", 0, 0);
+    // MessageBox(0, L"Engine initialized", 0, 0);
+    LOG_INFO(L"Engine::init()");
 }
 
 void Engine::update() {
@@ -104,7 +89,12 @@ void Engine::update() {
 
 void Engine::render() {
     auto allocator = commandAllocators[currentIndex]->getAllocator();
-    auto backBuffer = backBuffers[currentIndex];
+    auto backBuffer = swapchain->getBackBuffer(currentIndex);
+
+    if (!backBuffer) {
+        LOG_ERROR(L"backBuffer at index %d is null!", currentIndex);
+        return;
+    }
 
     allocator->Reset();
     commandList->getCommandList()->Reset(allocator.Get(), nullptr);
@@ -153,27 +143,31 @@ void Engine::render() {
         commandLists
     );
 
-    INT syncInterval = config.vsync ? 1 : 0;
-    UINT presentFlags = isTearingSupported && !config.vsync ? DXGI_PRESENT_ALLOW_TEARING : 0;
-
-    throwFailed(
-        swapchain->getSwapchain().Get()->Present(
-            syncInterval, 
-            presentFlags
-        )
-    );
-
     frameFenceCounts[currentIndex] = fence->signal(
         commandQueue->getQueue()
     );
 
-    currentIndex = swapchain->getSwapchain().Get()->GetCurrentBackBufferIndex();
+    INT syncInterval = config.vsync ? 1 : 0;
+    UINT presentFlags = isTearingSupported && !config.vsync ? DXGI_PRESENT_ALLOW_TEARING : 0;
+
+    LOG_INFO(L"Calling Present: vsync = %d, tearing = %d", config.vsync, isTearingSupported);
+    throwFailed(
+        swapchain->getSwapchain()->Present(
+            syncInterval,
+            presentFlags
+        )
+    );
+    currentIndex = swapchain->getSwapchain()->GetCurrentBackBufferIndex();
 
     fence->wait(frameFenceCounts[currentIndex]);
 }
 
+void Engine::flush() {
+    fence->flush(commandQueue->getQueue());
+}
+
 void Engine::resize(uint32_t width, uint32_t height) {
-    if (config.width != width || config.height) {
+    if (config.width != width || config.height != height) {
         config.width = std::max(1u, width);
         config.height = std::max(1u, height);
 
@@ -181,7 +175,7 @@ void Engine::resize(uint32_t width, uint32_t height) {
 
         for (int i = 0; i < FRAMEBUFFERCOUNT; ++i)
         {
-            backBuffers[i].Reset();
+             swapchain->getBackBuffer(i).Reset();
             frameFenceCounts[i] = frameFenceCounts[currentIndex];
         }
 

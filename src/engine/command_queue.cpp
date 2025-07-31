@@ -5,7 +5,7 @@ CommandQueue::CommandQueue(
     D3D12_COMMAND_LIST_TYPE type
 ) {
     queue = createQueue(device, type);
-    LOG_INFO(L"DirectX 12 Command Queue initialized.");
+    LOG_INFO(L"CommandQueue->DirectX 12 Command Queue initialized.");
 }
 
 CommandQueue::~CommandQueue() = default;

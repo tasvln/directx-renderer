@@ -1,8 +1,9 @@
 #include "fence.h"
 
 Fence::Fence(ComPtr<ID3D12Device2> device) {
-    createFence(device);
+    fence = createFence(device);
     fenceEvent = createEvent();
+    LOG_INFO(L"Fence->Fence & Fence Event created.");
 }
 
 Fence::~Fence() {
@@ -39,8 +40,11 @@ void Fence::flush(ComPtr<ID3D12CommandQueue> commandQueue) {
 UINT64 Fence::signal(
     ComPtr<ID3D12CommandQueue> commandQueue
 ) {
+    LOG_INFO(L"fenceCount before++: %d", fenceCount);
     fenceCount++;
+    LOG_INFO(L"fenceCount after++: %d", fenceCount);
     throwFailed(commandQueue->Signal(fence.Get(), fenceCount));
+    LOG_INFO(L"fenceCount commandQueue->Signal: %d", fenceCount);
     return fenceCount;
 }
 

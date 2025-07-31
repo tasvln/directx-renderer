@@ -41,6 +41,11 @@ class Swapchain {
         ComPtr<IDXGISwapChain4> getSwapchain() const {
             return swapchain;
         }
+
+        ComPtr<ID3D12Resource> getBackBuffer(size_t index) const {
+            return backBuffers[index];
+        }
+
     private:
         ComPtr<IDXGISwapChain4> swapchain;
         ComPtr<ID3D12Resource> backBuffers[FRAMEBUFFERCOUNT];

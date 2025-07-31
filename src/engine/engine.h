@@ -30,6 +30,8 @@ class Engine {
 
         void setFullScreen(bool toggleFullscreen);
 
+        void flush();
+
     private:
         HWND& hwnd;
         WindowConfig& config;
@@ -43,7 +45,7 @@ class Engine {
 
         FrameTimer timer;
 
-        ComPtr<ID3D12Resource> backBuffers[FRAMEBUFFERCOUNT];
+        // ComPtr<ID3D12Resource> backBuffers[FRAMEBUFFERCOUNT];
         std::vector<std::unique_ptr<CommandAllocator>> commandAllocators{};
         ComPtr<ID3D12DescriptorHeap> rtvHeap;
         

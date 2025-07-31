@@ -11,7 +11,7 @@ CommandList::CommandList(
         type
     );
 
-    LOG_INFO(L"Created Command List");
+    LOG_INFO(L"CommandList->Created Command List");
 }
 
 ComPtr<ID3D12GraphicsCommandList> CommandList::createCommandList(
