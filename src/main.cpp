@@ -21,7 +21,6 @@ HWND createWindow(int nCmdShow, HINSTANCE hInstance) {
         static_cast<LONG>(config.width),
         static_cast<LONG>(config.height)
     };
-    LOG_INFO(L"windowRect set");
 
     AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, false);
 
@@ -30,8 +29,6 @@ HWND createWindow(int nCmdShow, HINSTANCE hInstance) {
 
     int windowX = std::max<int>(0, (screenWidth - windowWidth) / 2);
     int windowY = std::max<int>(0, (screenHeight - windowHeight) / 2);
-
-    LOG_INFO(L"windowX & windowY");
 
     return CreateWindowEx(
         0,
