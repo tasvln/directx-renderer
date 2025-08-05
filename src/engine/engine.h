@@ -6,9 +6,6 @@
 #include "device.h"
 #include "command_queue.h"
 #include "swapchain.h"
-#include "command_allocator.h"
-#include "command_list.h"
-#include "fence.h"
 
 class Engine {
     public:

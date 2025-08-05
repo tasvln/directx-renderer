@@ -37,6 +37,7 @@
 #define FRAMEBUFFERCOUNT 3
 
 using namespace Microsoft::WRL;
+using namespace DirectX;
 
 // future -> can put this in a settings file if i decide on a debug UI
 struct WindowConfig {

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+echo "Compiling HLSL shaders..."
+
+# Compile vertex shader
+dxc -T vs_6_0 -E main -Fo bin/vertex.cso vertex.hlsl
+
+# Compile pixel shader
+dxc -T ps_6_0 -E main -Fo bin/pixel pixel.hlsl
+
+echo "Shader compilation done."
