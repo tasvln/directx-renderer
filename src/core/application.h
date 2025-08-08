@@ -5,7 +5,7 @@
 
 #include "DirectXMath.h"
 
-class Application : public IApplication {
+class Application : public IApplication, public IWindowEventHandler {
     public:
         using super = IApplication;
 
@@ -17,7 +17,6 @@ class Application : public IApplication {
         );
 
         virtual bool loadContent() override;
-
         virtual void unloadContent() override;
 
     protected:
@@ -63,7 +62,7 @@ class Application : public IApplication {
             int height
         );
 
-        uint64_t fenceValues[Window::BufferCount] {};
+        uint64_t fenceValues[FRAMEBUFFERCOUNT] {};
 
         // vertex
         ComPtr<ID3D12Resource> vertexBuffer;

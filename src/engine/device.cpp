@@ -120,18 +120,6 @@ void Device::enableDeviceDebugLayer(ComPtr<ID3D12Device2>& debugDevice) {
     #endif
 }
 
-void Device::enableDebugLayer() {
-    #if defined(_DEBUG)
-        ComPtr<ID3D12Debug> debugController;
-
-        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
-            debugController->EnableDebugLayer();
-        } else {
-            LOG_ERROR(L"Failed to enable debug layer!");
-        }
-    #endif
-}
-
 
 bool Device::checkForTearingSupport()
 {

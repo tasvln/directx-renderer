@@ -32,14 +32,14 @@ Application::Application(
     int height,
     bool vsync = false
 ) :
-    super(name, width, height, vsync),
+    IApplication(name, width, height, vsync),
     scissorRect(
         CD3DX12_RECT(0, 0, LONG_MAX, LONG_MAX)
     ),
     viewport(
         CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height))
     ),
-    fov(45.0),
+    fov(DirectX::XM_PIDIV4), // Default 45-degree FOV
     isResourceLoaded(false)
 {}
 
@@ -264,6 +264,47 @@ bool Application::loadContent() {
     return true;
 }
 
+void Application::unloadContent() {
+    vertexBuffer.Reset();
+    indexBuffer.Reset();
+    depthBuffer.Reset();
+    dsvHeap.Reset();
+    rootSignature.Reset();
+    pipelineState.Reset();
+    isResourceLoaded = false;
+}
+// Transition a resource
+void Application::transitionResource(
+    ComPtr<ID3D12GraphicsCommandList2> commandList,
+    ComPtr<ID3D12Resource> resource,
+    D3D12_RESOURCE_STATES beforeState, 
+    D3D12_RESOURCE_STATES afterState
+) {
+    CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+        resource.Get(),
+        beforeState, 
+        afterState
+    );
+ 
+    commandList->ResourceBarrier(1, &barrier);
+}
+
+void Application::clearRTV(
+    ComPtr<ID3D12GraphicsCommandList2> commandList,
+    D3D12_CPU_DESCRIPTOR_HANDLE rtv, 
+    FLOAT* clearColor
+) {
+    commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
+}
+
+void Application::clearDepth(
+    ComPtr<ID3D12GraphicsCommandList2> commandList,
+    D3D12_CPU_DESCRIPTOR_HANDLE dsv, 
+    FLOAT depth
+) {
+    commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
+}
+
 void Application::resizeDepthBuffer(int width, int height) {
     if (isResourceLoaded) {
         Engine::getEngine().flush();
@@ -317,7 +358,7 @@ void Application::resizeDepthBuffer(int width, int height) {
 void Application::onResize(ResizeEventArgs& e) {
     if (e.width != getWidth() || e.height != getHeight())
     {
-        super::onResize(e);
+        IApplication::onResize(e);
  
         viewport = CD3DX12_VIEWPORT(
             0.0f, 
@@ -368,38 +409,6 @@ void Application::onUpdate(UpdateEventArgs& e) {
     float aspectRatio = getWidth() / static_cast<float>(getHeight());
 
     projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(fov), aspectRatio, 0.1f, 100.0f);
-}
-
-// Transition a resource
-void Application::transitionResource(
-    ComPtr<ID3D12GraphicsCommandList2> commandList,
-    ComPtr<ID3D12Resource> resource,
-    D3D12_RESOURCE_STATES beforeState, 
-    D3D12_RESOURCE_STATES afterState
-) {
-    CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-        resource.Get(),
-        beforeState, 
-        afterState
-    );
- 
-    commandList->ResourceBarrier(1, &barrier);
-}
-
-void Application::clearRTV(
-    ComPtr<ID3D12GraphicsCommandList2> commandList,
-    D3D12_CPU_DESCRIPTOR_HANDLE rtv, 
-    FLOAT* clearColor
-) {
-    commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
-}
-
-void Application::clearDepth(
-    ComPtr<ID3D12GraphicsCommandList2> commandList,
-    D3D12_CPU_DESCRIPTOR_HANDLE dsv, 
-    FLOAT depth
-) {
-    commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
 }
 
 // some shaderbinitngtable???

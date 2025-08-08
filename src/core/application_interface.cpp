@@ -1,58 +1,75 @@
 #include "application_interface.h"
 
-bool IApplication::initialize() {
+IApplication::IApplication(
+    const std::wstring& name, 
+    int width, 
+    int height, 
+    bool vSync
+) : 
+    name(name), 
+    width(width), 
+    height(height), 
+    vsync(vSync) 
+{}
+
+bool IApplication::initialize(std::shared_ptr<Engine> engine) {
     // Check for DirectX Math library support.
     if (!DirectX::XMVerifyCPUSupport())
     {
-        MessageBoxA(NULL, "Failed to verify DirectX Math library support.", "Error", MB_OK | MB_ICONERROR);
-        
+        MessageBox(
+            NULL, 
+            L"Failed to verify DirectX Math library support.", 
+            L"Error",
+            MB_OK | MB_ICONERROR
+        );
         LOG_ERROR(L"Failed to verify DirectX Math library support, Application Initialization Failed");
         return false;
     }
  
-    pWindow = Engine::getEngine().createRenderWindow(
-        name,
-        width,
-        height,
-        vsync
-    );
+    // Create the window through the engine
+    engine = Engine::getEnginePtr();
+    auto window = engine->createRenderWindow(name, width, height, vsync);
     
-    pWindow->registerCallbacks(shared_from_this());
-    pWindow->show();
+    // Register this object as the event handler
+    window->registerEventHandler(shared_from_this());
+
+    window->show();
  
     return true;
 }
 
 void IApplication::destroy()
 {
-    Engine::getEngine().destroyWindow(pWindow);
-    pWindow.reset();
+    if (engine) {
+        engine->destroyAllWindows();
+        engine.reset();
+    }
 }
 
-void IApplication::onUpdate(UpdateEventArgs& e) {}
+// void IApplication::onUpdate(UpdateEventArgs& e) {}
 
-void IApplication::onRender(RenderEventArgs& e) {}
+// void IApplication::onRender(RenderEventArgs& e) {}
 
-void IApplication::onKeyPressed(KeyEventArgs& e) {}
+// void IApplication::onKeyPressed(KeyEventArgs& e) {}
 
-void IApplication::onKeyReleased(KeyEventArgs& e) {}
+// void IApplication::onKeyReleased(KeyEventArgs& e) {}
 
-void IApplication::onMouseMoved(MouseMotionEventArgs& e) {}
+// void IApplication::onMouseMoved(MouseMotionEventArgs& e) {}
 
-void IApplication::onMouseButtonPressed(MouseButtonEventArgs& e) {}
+// void IApplication::onMouseButtonPressed(MouseButtonEventArgs& e) {}
 
-void IApplication::onMouseButtonReleased(MouseButtonEventArgs& e) {}
+// void IApplication::onMouseButtonReleased(MouseButtonEventArgs& e) {}
 
-void IApplication::onMouseWheel(MouseWheelEventArgs& e) {}
+// void IApplication::onMouseWheel(MouseWheelEventArgs& e) {}
 
-void IApplication::onResize(ResizeEventArgs& e) {
-    width = e.width;
-    height = e.height;
-}
+// void IApplication::onResize(ResizeEventArgs& e) {
+//     width = e.width;
+//     height = e.height;
+// }
 
-void IApplication::onWindowDestroy() {
-    // If the Window which we are registered to is 
-    // destroyed, then any resources which are associated 
-    // to the window must be released.
-    unloadContent();
-}
+// void IApplication::onWindowDestroy() {
+//     // If the Window which we are registered to is 
+//     // destroyed, then any resources which are associated 
+//     // to the window must be released.
+//     unloadContent();
+// }

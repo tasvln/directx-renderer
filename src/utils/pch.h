@@ -34,7 +34,7 @@
 #define LOG_ERROR(fmt, ...)   Logger::instance().log(LogType::Error,   __FILE__, __FUNCTION__, __LINE__, fmt, __VA_ARGS__)
 #define LOG_DEBUG(fmt, ...)   Logger::instance().log(LogType::Debug,   __FILE__, __FUNCTION__, __LINE__, fmt, __VA_ARGS__)
 
-#define FRAMEBUFFERCOUNT 3
+static const UINT FRAMEBUFFERCOUNT = 3;
 
 using namespace Microsoft::WRL;
 using namespace DirectX;
