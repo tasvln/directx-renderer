@@ -2,49 +2,55 @@
 
 #include "utils/pch.h"
 #include "utils/event_interface.h"
+#include "window_manger.h"
 
-class Window {
-    public:
-        Window(HINSTANCE hInstance, WindowConfig& config);
-        ~Window();
+class Window
+{
+public:
+    friend class WindowManager;
 
-        HWND getHwnd() const {
-            return hwnd;
-        }
+    Window(HINSTANCE hInstance, WindowConfig &config);
+    ~Window();
 
-        void show();
-        void pumpMessages();
-        void run();
+    HWND getHwnd() const
+    {
+        return hwnd;
+    }
 
-        void registerEventHandler(std::shared_ptr<IWindowEventHandler> handler) {
-            eventHandler = handler;
-        }
+    void show();
+    void pumpMessages();
+    void run();
+    void destroy();
 
-        void enableDebugLayer();
+    void registerEventHandler(std::shared_ptr<IWindowEventHandler> handler)
+    {
+        eventHandler = handler;
+    }
 
-        HWND createWindow(HINSTANCE hInstance);
+    void enableDebugLayer();
 
-    protected:
-        void dispatchUpdate(UpdateEventArgs& e);
-        void dispatchRender(RenderEventArgs& e);
-        void dispatchKeyPressed(KeyEventArgs& e);
-        void dispatchKeyReleased(KeyEventArgs& e);
-        void dispatchMouseMoved(KeyEventArgs& e);
-        void dispatchMouseButtonPressed(KeyEventArgs& e);
-        void dispatchMouseButtonReleased(KeyEventArgs& e);
-        void dispatchMouseWheel(KeyEventArgs& e);
-        void dispatchResize(KeyEventArgs& e);
-        void dispatchWindowDestroy(KeyEventArgs& e);
+    bool checkForTearingSupport();
 
-    private:
-        HWND hwnd = nullptr;
-        WindowConfig config;
-        RECT windowRect = {};
+    HWND createWindow(HINSTANCE hInstance);
 
-        uint64_t frameCount;
+protected:
+    void dispatchUpdate(UpdateEventArgs &e);
+    void dispatchRender(RenderEventArgs &e);
+    void dispatchKeyPressed(KeyEventArgs &e);
+    void dispatchMouseWheel(KeyEventArgs &e);
+    void dispatchResize(KeyEventArgs &e);
+    void dispatchWindowDestroy(KeyEventArgs &e);
 
-        std::weak_ptr<IWindowEventHandler> eventHandler;
+private:
+    HWND hwnd = nullptr;
+    static std::unordered_map<HWND, Window *> hwndMap;
+    WindowConfig config;
+    RECT windowRect = {};
 
-        static LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-        LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
+    uint64_t frameCount;
+
+    std::weak_ptr<IWindowEventHandler> eventHandler;
+
+    static LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
 };

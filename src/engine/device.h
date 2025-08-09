@@ -2,38 +2,41 @@
 
 #include "utils/pch.h"
 
-class Device {
-    public:
-        Device(bool useWarp);
-        ~Device() = default;
-    
-        void initialize(bool useWarp = false);
+class Device
+{
+public:
+    Device(bool useWarp);
+    ~Device() = default;
 
-        ComPtr<IDXGIAdapter4> selectAdapter(bool useWarp);
-        ComPtr<ID3D12Device2> createDevice(ComPtr<IDXGIAdapter4> deviceAdapter);
+    void initialize(bool useWarp = false);
 
-        void enableDebugLayer();
-        void enableDeviceDebugLayer(ComPtr<ID3D12Device2>& debugDevice);
+    ComPtr<IDXGIAdapter4> selectAdapter(bool useWarp);
+    ComPtr<ID3D12Device2> createDevice(ComPtr<IDXGIAdapter4> deviceAdapter);
 
-        bool checkForTearingSupport();
+    void enableDebugLayer();
+    void enableDeviceDebugLayer(ComPtr<ID3D12Device2> &debugDevice);
 
-        // getters
-        ComPtr<ID3D12Device2> getDevice() const { 
-            return device; 
-        }
+    bool checkForTearingSupport();
 
-        ComPtr<IDXGIAdapter4> getAdapter() const { 
-            return adapter; 
-        }
+    // getters
+    ComPtr<ID3D12Device2> getDevice() const
+    {
+        return device;
+    }
 
-        bool getSupportTearingState() const {
-            return supportTearing;
-        }
+    ComPtr<IDXGIAdapter4> getAdapter() const
+    {
+        return adapter;
+    }
 
-    private:
-        ComPtr<IDXGIAdapter4> adapter;
-        ComPtr<ID3D12Device2> device;
+    bool getSupportTearingState() const
+    {
+        return supportTearing;
+    }
 
-        bool supportTearing = false;
+private:
+    ComPtr<IDXGIAdapter4> adapter;
+    ComPtr<ID3D12Device2> device;
 
+    bool supportTearing = false;
 };

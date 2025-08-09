@@ -1,6 +1,7 @@
 #include "device.h"
 
-Device::Device(bool useWarp) {
+Device::Device(bool useWarp)
+{
     enableDebugLayer();
 
     supportTearing = checkForTearingSupport();
@@ -12,7 +13,8 @@ Device::Device(bool useWarp) {
     LOG_INFO(L"Device->DirectX 12 device initialized.");
 }
 
-ComPtr<IDXGIAdapter4> Device::selectAdapter(bool useWarp) {
+ComPtr<IDXGIAdapter4> Device::selectAdapter(bool useWarp)
+{
     ComPtr<IDXGIFactory4> dxgiFactory;
     ComPtr<IDXGIAdapter1> dxgiAdapter1;
     ComPtr<IDXGIAdapter4> dxgiAdapter4;
@@ -20,9 +22,9 @@ ComPtr<IDXGIAdapter4> Device::selectAdapter(bool useWarp) {
 
     UINT createFactoryFlags = 0;
 
-    #if defined(_DEBUG)
-        createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
-    #endif
+#if defined(_DEBUG)
+    createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+#endif
 
     LOG_INFO(L"CreateDXGIFactory2 before!");
     throwFailed(CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory)));
@@ -32,7 +34,9 @@ ComPtr<IDXGIAdapter4> Device::selectAdapter(bool useWarp) {
     {
         throwFailed(dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&dxgiAdapter1)));
         throwFailed(dxgiAdapter1.As(&dxgiAdapter4));
-    } else {
+    }
+    else
+    {
         ComPtr<IDXGIAdapter1> bestAdapter1;
         size_t maxDedicatedVideoMemory = 0;
         LOG_INFO(L"maxDedicatedVideoMemory = 0!");
@@ -44,19 +48,21 @@ ComPtr<IDXGIAdapter4> Device::selectAdapter(bool useWarp) {
 
             if ((desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) == 0 &&
                 SUCCEEDED(D3D12CreateDevice(dxgiAdapter1.Get(), D3D_FEATURE_LEVEL_11_0, __uuidof(ID3D12Device), nullptr)) &&
-                desc.DedicatedVideoMemory > maxDedicatedVideoMemory
-            ) {
+                desc.DedicatedVideoMemory > maxDedicatedVideoMemory)
+            {
                 maxDedicatedVideoMemory = desc.DedicatedVideoMemory;
                 bestAdapter1 = dxgiAdapter1;
             }
         }
 
-        if (bestAdapter1) {
+        if (bestAdapter1)
+        {
             throwFailed(bestAdapter1.As(&dxgiAdapter4));
         }
     }
 
-    if (!dxgiAdapter4) {
+    if (!dxgiAdapter4)
+    {
         LOG_ERROR(L"No compatible GPU adapter found.");
         throw std::runtime_error("No compatible GPU adapter found.");
     }
@@ -64,7 +70,8 @@ ComPtr<IDXGIAdapter4> Device::selectAdapter(bool useWarp) {
     return dxgiAdapter4;
 }
 
-ComPtr<ID3D12Device2> Device::createDevice(ComPtr<IDXGIAdapter4> deviceAdapter) {
+ComPtr<ID3D12Device2> Device::createDevice(ComPtr<IDXGIAdapter4> deviceAdapter)
+{
     ComPtr<ID3D12Device2> id3d12device;
 
     // Try feature levels from highest to lowest
@@ -73,17 +80,19 @@ ComPtr<ID3D12Device2> Device::createDevice(ComPtr<IDXGIAdapter4> deviceAdapter) 
         D3D_FEATURE_LEVEL_12_1,
         D3D_FEATURE_LEVEL_12_0,
         D3D_FEATURE_LEVEL_11_1,
-        D3D_FEATURE_LEVEL_11_0
-    };
+        D3D_FEATURE_LEVEL_11_0};
 
-    for (auto level : featureLevels) {
-        if (SUCCEEDED(D3D12CreateDevice(deviceAdapter.Get(), level, IID_PPV_ARGS(&id3d12device)))) {
+    for (auto level : featureLevels)
+    {
+        if (SUCCEEDED(D3D12CreateDevice(deviceAdapter.Get(), level, IID_PPV_ARGS(&id3d12device))))
+        {
             LOG_INFO(L"Created D3D12 device with feature level 0x%x", level);
             break;
         }
     }
 
-    if (!id3d12device) {
+    if (!id3d12device)
+    {
         LOG_ERROR(L"Failed to create D3D12 device.");
         throw std::runtime_error("Failed to create D3D12 device.");
     }
@@ -93,41 +102,42 @@ ComPtr<ID3D12Device2> Device::createDevice(ComPtr<IDXGIAdapter4> deviceAdapter) 
     return id3d12device;
 }
 
-void Device::enableDeviceDebugLayer(ComPtr<ID3D12Device2>& debugDevice) {
-    #if defined(_DEBUG)
-        ComPtr<ID3D12InfoQueue> infoQueue;
-        
-        if (SUCCEEDED(debugDevice.As(&infoQueue))) {
-            infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
-            infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
-            infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
+void Device::enableDeviceDebugLayer(ComPtr<ID3D12Device2> &debugDevice)
+{
+#if defined(_DEBUG)
+    ComPtr<ID3D12InfoQueue> infoQueue;
 
-            D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
-            D3D12_MESSAGE_ID denyIds[] = {
-                D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
-                D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
-                D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
-            };
+    if (SUCCEEDED(debugDevice.As(&infoQueue)))
+    {
+        infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
+        infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
+        infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, TRUE);
 
-            D3D12_INFO_QUEUE_FILTER filter = {};
-            filter.DenyList.NumSeverities = _countof(severities);
-            filter.DenyList.pSeverityList = severities;
-            filter.DenyList.NumIDs = _countof(denyIds);
-            filter.DenyList.pIDList = denyIds;
+        D3D12_MESSAGE_SEVERITY severities[] = {D3D12_MESSAGE_SEVERITY_INFO};
+        D3D12_MESSAGE_ID denyIds[] = {
+            D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
+            D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,
+            D3D12_MESSAGE_ID_UNMAP_INVALID_NULLRANGE,
+        };
 
-            infoQueue->PushStorageFilter(&filter);
-        }
-    #endif
+        D3D12_INFO_QUEUE_FILTER filter = {};
+        filter.DenyList.NumSeverities = _countof(severities);
+        filter.DenyList.pSeverityList = severities;
+        filter.DenyList.NumIDs = _countof(denyIds);
+        filter.DenyList.pIDList = denyIds;
+
+        infoQueue->PushStorageFilter(&filter);
+    }
+#endif
 }
-
 
 bool Device::checkForTearingSupport()
 {
     BOOL allowTearing = FALSE;
 
     // Rather than create the DXGI 1.5 factory interface directly, we create the
-    // DXGI 1.4 interface and query for the 1.5 interface. This is to enable the 
-    // graphics debugging tools which will not support the 1.5 factory interface 
+    // DXGI 1.4 interface and query for the 1.5 interface. This is to enable the
+    // graphics debugging tools which will not support the 1.5 factory interface
     // until a future update.
     ComPtr<IDXGIFactory4> factory4;
     if (SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&factory4))))
@@ -136,10 +146,10 @@ bool Device::checkForTearingSupport()
         if (SUCCEEDED(factory4.As(&factory5)))
         {
             if (FAILED(factory5->CheckFeatureSupport(
-                DXGI_FEATURE_PRESENT_ALLOW_TEARING, 
-                &allowTearing, 
-                sizeof(allowTearing)))
-            ) {
+                    DXGI_FEATURE_PRESENT_ALLOW_TEARING,
+                    &allowTearing,
+                    sizeof(allowTearing))))
+            {
                 allowTearing = FALSE;
             }
         }
