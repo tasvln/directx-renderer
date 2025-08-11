@@ -34,13 +34,28 @@ Window::Window(
     LOG_INFO(L"RegisterClassEx created!");
 
     hwnd = createWindow(hInstance);
-    hwndMap[hwnd] = this;
 }
 
 Window::~Window()
 {
     hwndMap.erase(hwnd);
     DestroyWindow(hwnd);
+}
+
+void Window::show()
+{
+}
+
+void Window::pumpMessages()
+{
+}
+
+void Window::run()
+{
+}
+
+void Window::destroy()
+{
 }
 
 void Window::enableDebugLayer()

@@ -5,6 +5,9 @@
 class WindowManger
 {
 public:
+    WindowManger(HINSTANCE hInstance);
+    ~WindowManger() = default;
+
     std::shared_ptr<Window> createWindow(const std::wstring &name, const WindowConfig &config);
     std::shared_ptr<Window> getWindow(HWND hwnd);
     std::shared_ptr<Window> getWindow(const std::wstring &name);
@@ -13,6 +16,8 @@ public:
     void destroyAll();
 
 private:
-    std::unordered_map<HWND, std::shared_ptr<Window>> windowsByHandle;
+    HINSTANCE hInstance;
+    std::unordered_map<HWND, std::shared_ptr<Window>>
+        windowsByHandle;
     std::unordered_map<std::wstring, std::shared_ptr<Window>> windowsByName;
 };

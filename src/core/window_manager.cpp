@@ -1,6 +1,8 @@
 #include "window_manger.h"
 #include "window.h"
 
+WindowManger::WindowManger(HINSTANCE hInstance) : hInstance(hInstance) {}
+
 std::shared_ptr<Window> WindowManager::createWindow(const std::wstring &name, const WindowConfig &config)
 {
     // Prevent duplicate windows by name.
@@ -10,12 +12,10 @@ std::shared_ptr<Window> WindowManager::createWindow(const std::wstring &name, co
         return it->second;
     }
 
-    // Create a new window instance.
-    auto window = std::make_shared<Window>(config.hInstance, const_cast<WindowConfig &>(config));
+    auto window = std::make_shared<Window>(hInstance, config);
 
-    // Store in maps.
-    windowsByHandle[window->getHwnd()] = window;
-    windowsByName[name] = window;
+    windowsByHandle.emplace(hwnd, window);
+    windowsByName.emplace(name, window);
 
     return window;
 }
