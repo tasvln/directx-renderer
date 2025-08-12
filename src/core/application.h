@@ -2,6 +2,7 @@
 
 #include "application_interface.h"
 #include "window.h"
+#include "engine/engine.h"
 
 #include "DirectXMath.h"
 
@@ -9,12 +10,7 @@ class Application : public IApplication, public IWindowEventHandler {
     public:
         using super = IApplication;
 
-        Application(
-            const std::wstring& name,
-            int width,
-            int height,
-            bool vsync = false
-        );
+        Application(WindowConfig& config);
 
         virtual bool loadContent() override;
         virtual void unloadContent() override;
@@ -78,10 +74,10 @@ class Application : public IApplication, public IWindowEventHandler {
         ComPtr<ID3D12DescriptorHeap> dsvHeap;
 
         // Root signature
-        Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+        ComPtr<ID3D12RootSignature> rootSignature;
 
         // Pipeline state object.
-        Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
+        ComPtr<ID3D12PipelineState> pipelineState;
     
         // from vulkan and opengl -> this make so much SENSEEEEEE
         D3D12_VIEWPORT viewport;

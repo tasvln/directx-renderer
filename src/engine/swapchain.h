@@ -36,8 +36,6 @@ class Swapchain {
             ComPtr<ID3D12DescriptorHeap> descriptorHeap
         );
 
-        // bool checkTearingSupport();
-
         ComPtr<IDXGISwapChain4> getSwapchain() const {
             return swapchain;
         }

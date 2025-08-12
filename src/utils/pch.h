@@ -58,3 +58,4 @@ inline void throwFailed(HRESULT hr) {
         throw std::runtime_error("HRESULT failed");
     }
 }
+

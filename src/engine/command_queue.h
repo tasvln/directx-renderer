@@ -32,6 +32,8 @@ class CommandQueue {
 
         void fenceFlush(UINT64 value);
 
+        void flush();
+
         bool isFenceComplete(UINT64 value);
 
         // getters

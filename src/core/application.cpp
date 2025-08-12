@@ -7,47 +7,48 @@ struct VertexPositionColor
 };
 
 static VertexPositionColor vertices[8] = {
-    {XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f)}, // 0
-    {XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f)},  // 1
-    {XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f)},   // 2
-    {XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f)},  // 3
-    {XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f)},  // 4
-    {XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f)},   // 5
-    {XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f)},    // 6
-    {XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 1.0f)}    // 7
+    { XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) }, // 0
+    { XMFLOAT3(-1.0f,  1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) }, // 1
+    { XMFLOAT3( 1.0f,  1.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) }, // 2
+    { XMFLOAT3( 1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, // 3
+    { XMFLOAT3(-1.0f, -1.0f,  1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f) }, // 4
+    { XMFLOAT3(-1.0f,  1.0f,  1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f) }, // 5
+    { XMFLOAT3( 1.0f,  1.0f,  1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) }, // 6
+    { XMFLOAT3( 1.0f, -1.0f,  1.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) }  // 7
 };
 
-static WORD indicies[36] = {
+static WORD indices[36] = {
     0, 1, 2, 0, 2, 3,
     4, 6, 5, 4, 7, 6,
     4, 5, 1, 4, 1, 0,
     3, 2, 6, 3, 6, 7,
     1, 5, 6, 1, 6, 2,
-    4, 0, 3, 4, 3, 7};
+    4, 0, 3, 4, 3, 7
+};
 
 Application::Application(
-    const std::wstring &name,
-    int width,
-    int height,
-    bool vsync = false) : IApplication(name, width, height, vsync),
-                          scissorRect(
-                              CD3DX12_RECT(0, 0, LONG_MAX, LONG_MAX)),
-                          viewport(
-                              CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height))),
-                          fov(DirectX::XM_PIDIV4), // Default 45-degree FOV
-                          isResourceLoaded(false)
-{
-}
+    WindowConfig& config
+) :
+    IApplication(config),
+    scissorRect(
+        CD3DX12_RECT(0, 0, LONG_MAX, LONG_MAX)
+    ),
+    viewport(
+        CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(config.width), static_cast<float>(config.height))
+    ),
+    fov(45.0f), // Default 45-degree FOV
+    isResourceLoaded(false)
+{}
 
 void Application::updateBufferResource(
     ComPtr<ID3D12GraphicsCommandList2> commandList,
-    ID3D12Resource **pDestinationResource,
-    ID3D12Resource **pIntermediateResource,
-    size_t numElements,
-    size_t elementSize,
-    const void *bufferData,
-    D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE)
-{
+    ID3D12Resource** pDestinationResource, 
+    ID3D12Resource** pIntermediateResource,
+    size_t numElements, 
+    size_t elementSize, 
+    const void* bufferData, 
+    D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE 
+) {
     auto device = Engine::getEngine().getDevice();
 
     size_t bufferSize = numElements * elementSize;
@@ -60,11 +61,12 @@ void Application::updateBufferResource(
             &CD3DX12_RESOURCE_DESC::Buffer(bufferSize, flags),
             D3D12_RESOURCE_STATE_COMMON,
             nullptr,
-            IID_PPV_ARGS(pDestinationResource)));
+            IID_PPV_ARGS(pDestinationResource)
+        )
+    );
 
     // Create an committed resource for the upload.
-    if (bufferData)
-    {
+    if (bufferData) {
         throwFailed(
             device->CreateCommittedResource(
                 &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -72,26 +74,28 @@ void Application::updateBufferResource(
                 &CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
                 D3D12_RESOURCE_STATE_GENERIC_READ,
                 nullptr,
-                IID_PPV_ARGS(pIntermediateResource)));
+                IID_PPV_ARGS(pIntermediateResource)
+            )
+        );
 
-        D3D12_SUBRESOURCE_DATA subresourceData{};
+        D3D12_SUBRESOURCE_DATA subresourceData {};
         subresourceData.pData = bufferData;
         subresourceData.RowPitch = bufferSize;
         subresourceData.SlicePitch = subresourceData.RowPitch;
 
         UpdateSubresources(
-            commandList.Get(),
-            *pDestinationResource,
+            commandList.Get(), 
+            *pDestinationResource, 
             *pIntermediateResource,
-            0,
-            0,
-            1,
-            &subresourceData);
+            0, 
+            0, 
+            1, 
+            &subresourceData
+        );
     }
 }
 
-bool Application::loadContent()
-{
+bool Application::loadContent() {
     auto device = Engine::getEngine().getDevice();
     auto queue = Engine::getEngine().getCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
     auto list = queue->getCommandList();
@@ -101,11 +105,12 @@ bool Application::loadContent()
 
     updateBufferResource(
         list.Get(),
-        &vertexBuffer,
+        &vertexBuffer, 
         &intermediateVertexBuffer,
-        _countof(vertices),
-        sizeof(VertexPositionColor),
-        vertices);
+        _countof(vertices), 
+        sizeof(VertexPositionColor), 
+        vertices
+    );
 
     // Create the vertex buffer view.
     vertexBufferView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
@@ -117,16 +122,17 @@ bool Application::loadContent()
 
     updateBufferResource(
         list.Get(),
-        &indexBuffer,
+        &indexBuffer, 
         &intermediateIndexBuffer,
-        _countof(indicies),
-        sizeof(WORD),
-        indicies);
+        _countof(indices), 
+        sizeof(WORD), 
+        indices
+    );
 
     // Create index buffer view.
     indexBufferView.BufferLocation = indexBuffer->GetGPUVirtualAddress();
     indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-    indexBufferView.SizeInBytes = sizeof(indicies);
+    indexBufferView.SizeInBytes = sizeof(indices);
 
     D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
     dsvHeapDesc.NumDescriptors = 1;
@@ -135,20 +141,22 @@ bool Application::loadContent()
 
     throwFailed(
         device->CreateDescriptorHeap(
-            &dsvHeapDesc,
-            IID_PPV_ARGS(&dsvHeap)));
+            &dsvHeapDesc, 
+            IID_PPV_ARGS(&dsvHeap)
+        )
+    );
 
     // Load the vertex shader.
     ComPtr<ID3DBlob> vertexShaderBlob;
     throwFailed(D3DReadFileToBlob(L"assets/shaders/vertex.cso", &vertexShaderBlob));
-
+ 
     // Load the pixel shader.
     ComPtr<ID3DBlob> pixelShaderBlob;
     throwFailed(D3DReadFileToBlob(L"assets/shaders/pixel.cso", &pixelShaderBlob));
 
     D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
-        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-        {"COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
 
     // Create a root signature.
@@ -175,11 +183,12 @@ bool Application::loadContent()
 
     CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDescription;
     rootSignatureDescription.Init_1_1(
-        _countof(rootParameters),
-        rootParameters,
-        0,
-        nullptr,
-        rootSignatureFlags);
+        _countof(rootParameters), 
+        rootParameters, 
+        0, 
+        nullptr, 
+        rootSignatureFlags
+    );
 
     // Serialize the root signature -> in production do this before runtime and at compile time
     ComPtr<ID3DBlob> rootSignatureBlob;
@@ -188,17 +197,21 @@ bool Application::loadContent()
     throwFailed(
         D3DX12SerializeVersionedRootSignature(
             &rootSignatureDescription,
-            featureData.HighestVersion,
-            &rootSignatureBlob,
-            &errorBlob));
+            featureData.HighestVersion, 
+            &rootSignatureBlob, 
+            &errorBlob
+        )
+    );
 
     // Create the root signature.
     throwFailed(
         device->CreateRootSignature(
-            0,
-            rootSignatureBlob->GetBufferPointer(),
-            rootSignatureBlob->GetBufferSize(),
-            IID_PPV_ARGS(&rootSignature)));
+            0, 
+            rootSignatureBlob->GetBufferPointer(), 
+            rootSignatureBlob->GetBufferSize(), 
+            IID_PPV_ARGS(&rootSignature)
+        )
+    );
 
     // pso -> pipeline state object
     struct PipelineStateStream
@@ -217,7 +230,7 @@ bool Application::loadContent()
     rtvFormats.RTFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 
     pipelineStateStream.pRootSignature = rootSignature.Get();
-    pipelineStateStream.InputLayout = {inputLayout, _countof(inputLayout)};
+    pipelineStateStream.InputLayout = { inputLayout, _countof(inputLayout) };
     pipelineStateStream.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     pipelineStateStream.VS = CD3DX12_SHADER_BYTECODE(vertexShaderBlob.Get());
     pipelineStateStream.PS = CD3DX12_SHADER_BYTECODE(pixelShaderBlob.Get());
@@ -225,27 +238,30 @@ bool Application::loadContent()
     pipelineStateStream.RTVFormats = rtvFormats;
 
     D3D12_PIPELINE_STATE_STREAM_DESC pipelineStateStreamDesc = {
-        sizeof(PipelineStateStream), &pipelineStateStream};
+        sizeof(PipelineStateStream), &pipelineStateStream
+    };
 
     throwFailed(
         device->CreatePipelineState(
-            &pipelineStateStreamDesc,
-            IID_PPV_ARGS(&pipelineState)));
+            &pipelineStateStreamDesc, 
+            IID_PPV_ARGS(&pipelineState)
+        )
+    );
 
     auto fenceValue = queue->ExecuteCommandList(list);
     queue->WaitForFenceValue(fenceValue);
-
+ 
     isResourceLoaded = true;
 
     resizeDepthBuffer(
         getWidth(),
-        getHeight());
+        getHeight()
+    );
 
     return true;
 }
 
-void Application::unloadContent()
-{
+void Application::unloadContent() {
     vertexBuffer.Reset();
     indexBuffer.Reset();
     depthBuffer.Reset();
@@ -254,41 +270,41 @@ void Application::unloadContent()
     pipelineState.Reset();
     isResourceLoaded = false;
 }
+
 // Transition a resource
 void Application::transitionResource(
     ComPtr<ID3D12GraphicsCommandList2> commandList,
     ComPtr<ID3D12Resource> resource,
-    D3D12_RESOURCE_STATES beforeState,
-    D3D12_RESOURCE_STATES afterState)
-{
+    D3D12_RESOURCE_STATES beforeState, 
+    D3D12_RESOURCE_STATES afterState
+) {
     CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
         resource.Get(),
-        beforeState,
-        afterState);
-
+        beforeState, 
+        afterState
+    );
+ 
     commandList->ResourceBarrier(1, &barrier);
 }
 
 void Application::clearRTV(
     ComPtr<ID3D12GraphicsCommandList2> commandList,
-    D3D12_CPU_DESCRIPTOR_HANDLE rtv,
-    FLOAT *clearColor)
-{
+    D3D12_CPU_DESCRIPTOR_HANDLE rtv, 
+    FLOAT* clearColor
+) {
     commandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
 }
 
 void Application::clearDepth(
     ComPtr<ID3D12GraphicsCommandList2> commandList,
-    D3D12_CPU_DESCRIPTOR_HANDLE dsv,
-    FLOAT depth)
-{
+    D3D12_CPU_DESCRIPTOR_HANDLE dsv, 
+    FLOAT depth
+) {
     commandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
 }
 
-void Application::resizeDepthBuffer(int width, int height)
-{
-    if (isResourceLoaded)
-    {
+void Application::resizeDepthBuffer(int width, int height) {
+    if (isResourceLoaded) {
         Engine::getEngine().flush();
 
         width = std::max(1, width);
@@ -300,24 +316,27 @@ void Application::resizeDepthBuffer(int width, int height)
         // Create a depth buffer.
         D3D12_CLEAR_VALUE optimizedClearValue = {};
         optimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
-        optimizedClearValue.DepthStencil = {1.0f, 0};
-
+        optimizedClearValue.DepthStencil = { 1.0f, 0 };
+ 
         throwFailed(
             device->CreateCommittedResource(
                 &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
                 D3D12_HEAP_FLAG_NONE,
                 &CD3DX12_RESOURCE_DESC::Tex2D(
-                    DXGI_FORMAT_D32_FLOAT,
-                    width,
+                    DXGI_FORMAT_D32_FLOAT, 
+                    width, 
                     height,
-                    1,
-                    0,
-                    1,
-                    0,
-                    D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
+                    1, 
+                    0, 
+                    1, 
+                    0, 
+                    D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL
+                ),
                 D3D12_RESOURCE_STATE_DEPTH_WRITE,
                 &optimizedClearValue,
-                IID_PPV_ARGS(&depthBuffer)));
+                IID_PPV_ARGS(&depthBuffer)
+            )
+        );
 
         // Update the depth-stencil view.
         D3D12_DEPTH_STENCIL_VIEW_DESC dsv = {};
@@ -325,51 +344,48 @@ void Application::resizeDepthBuffer(int width, int height)
         dsv.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
         dsv.Texture2D.MipSlice = 0;
         dsv.Flags = D3D12_DSV_FLAG_NONE;
-
+ 
         device->CreateDepthStencilView(
-            depthBuffer.Get(),
+            depthBuffer.Get(), 
             &dsv,
-            dsvHeap->GetCPUDescriptorHandleForHeapStart());
+            dsvHeap->GetCPUDescriptorHandleForHeapStart()
+        );
     }
 }
 
-void Application::onResize(ResizeEventArgs &e)
-{
-    IApplication::setWidth(e.width);
-    IApplication::setHeight(e.height);
-
+void Application::onResize(ResizeEventArgs& e) {
     if (e.width != getWidth() || e.height != getHeight())
     {
-        // IApplication::onResize(e);
-
+ 
         viewport = CD3DX12_VIEWPORT(
+            0.0f, 
             0.0f,
-            0.0f,
-            static_cast<float>(e.width),
-            static_cast<float>(e.height));
+            static_cast<float>(e.width), 
+            static_cast<float>(e.height)
+        );
 
+        // Call engine to resize swapchain and related resources
+        Engine::getEngine().resize(e.width, e.height);
+ 
         resizeDepthBuffer(e.width, e.height);
     }
 }
 
-void Application::onUpdate(UpdateEventArgs &e)
-{
+void Application::onUpdate(UpdateEventArgs& e) {
     static uint64_t frameCount = 0;
     static double totalTime = 0.0;
-
-    super::onUpdate(e);
-
+ 
     totalTime += e.elapsedTime;
     frameCount++;
-
+ 
     if (totalTime > 1.0)
     {
         double fps = frameCount / totalTime;
-
+ 
         char buffer[512];
         sprintf_s(buffer, "FPS: %f\n", fps);
         OutputDebugStringA(buffer);
-
+ 
         frameCount = 0;
         totalTime = 0.0;
     }
@@ -394,26 +410,24 @@ void Application::onUpdate(UpdateEventArgs &e)
 }
 
 // some shaderbinitngtable???
-void Application::onRender(RenderEventArgs &e)
-{
-    super::onRender(e);
-
+void Application::onRender(RenderEventArgs& e) {
     auto commandQueue = Engine::getEngine().getCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
     auto commandList = commandQueue->GetCommandList();
 
-    UINT currentIndex = pWindow->getCurrentIndex();
-    auto backBuffer = pWindow->getCurrentBackBuffer();
-    auto rtv = pWindow->getCurrentRTV();
+    UINT currentIndex =  Engine::getEngine().getCurrentIndex();
+    auto backBuffer = Engine::getEngine().getCurrentBackBuffer();
+
+    auto rtv = Engine::getEngine().getCurrentRTV();
 
     auto dsv = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 
     // Clear the render targets.
     {
         transitionResource(commandList, backBuffer,
-                           D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-        FLOAT clearColor[] = {0.4f, 0.6f, 0.9f, 1.0f};
-
+            D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+ 
+        FLOAT clearColor[] = { 0.4f, 0.6f, 0.9f, 1.0f };
+ 
         clearRTV(commandList, rtv, clearColor);
         clearDepth(commandList, dsv);
     }
@@ -433,61 +447,56 @@ void Application::onRender(RenderEventArgs &e)
     // Update the Root Parameters
     // Update the MVP matrix
     XMMATRIX mvpMatrix = XMMatrixMultiply(modelMatrix, viewMatrix);
-    mvpMatrix = XMMatrixMultiply(mvpMatrix, projectionMatrix);
+    // mvpMatrix = XMMatrixMultiply(mvpMatrix, projectionMatrix);
+    mvpMatrix = XMMatrixMultiply(projectionMatrix, mvpMatrix);
     commandList->SetGraphicsRoot32BitConstants(0, sizeof(XMMATRIX) / 4, &mvpMatrix, 0);
 
     // draw
-    commandList->DrawIndexedInstanced(_countof(indicies), 1, 0, 0, 0);
-
-    // present
+    commandList->DrawIndexedInstanced(_countof(indices), 1, 0, 0, 0);
 
     // Present
     {
         transitionResource(
-            commandList,
+            commandList, 
             backBuffer,
-            D3D12_RESOURCE_STATE_RENDER_TARGET,
-            D3D12_RESOURCE_STATE_PRESENT);
-
+            D3D12_RESOURCE_STATE_RENDER_TARGET, 
+            D3D12_RESOURCE_STATE_PRESENT
+        );
+ 
         fenceValues[currentIndex] = commandQueue->ExecuteCommandList(commandList);
-
-        currentIndex = pWindow->present();
-
+ 
+        currentIndex = Engine::getEngine().present();
+ 
         commandQueue->WaitForFenceValue(fenceValues[currentIndex]);
     }
 }
 
-void Application::onKeyPressed(KeyEventArgs &e)
-{
-    super::onKeyPressed(e);
-
-    switch (e.key)
-    {
-    case KeyCode::Key::Escape:
-        Engine::getEngine().quit(0);
-        break;
-    case KeyCode::Key::Enter:
-        if (e.alt)
-        {
-        case KeyCode::Key::F11:
-            pWindow->ToggleFullscreen();
+void Application::onKeyPressed(KeyEventArgs& e) {
+    switch (e.key) {
+        case KeyCode::Key::Escape:
+            Engine::getEngine().quit(0);
             break;
-        }
-    case KeyCode::Key::V:
-        pWindow->toggleVsync();
-        break;
+        case KeyCode::Key::F11:
+            if (e.alt)
+                Engine::getEngine().toggleFullscreen();
+            break;
+        case KeyCode::Key::V:
+            Engine::getEngine().toggleVsync();
+            break;
     }
 }
 
-void Application::onMouseWheel(MouseWheelEventArgs &e)
-{
+void Application::onMouseWheel(MouseWheelEventArgs& e) {
     fov -= e.wheelDelta;
     fov = std::clamp(
         fov,
         12.0f,
-        90.0f);
+        90.0f
+    );
 
     char buffer[256];
     sprintf_s(buffer, "FoV: %f\n", fov);
     OutputDebugStringA(buffer);
 }
+
+

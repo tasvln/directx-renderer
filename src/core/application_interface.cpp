@@ -1,18 +1,12 @@
 #include "application_interface.h"
 
 IApplication::IApplication(
-    const std::wstring& name, 
-    int width, 
-    int height, 
-    bool vSync
+    WindowConfig& config
 ) : 
-    name(name), 
-    width(width), 
-    height(height), 
-    vsync(vSync) 
+    config(config)
 {}
 
-bool IApplication::initialize(std::shared_ptr<Engine> engine) {
+bool IApplication::initialize() {
     // Check for DirectX Math library support.
     if (!DirectX::XMVerifyCPUSupport())
     {
@@ -28,7 +22,7 @@ bool IApplication::initialize(std::shared_ptr<Engine> engine) {
  
     // Create the window through the engine
     engine = Engine::getEnginePtr();
-    auto window = engine->createRenderWindow(name, width, height, vsync);
+    auto window = engine->createRenderWindow(config);
     
     // Register this object as the event handler
     window->registerEventHandler(shared_from_this());
@@ -41,7 +35,6 @@ bool IApplication::initialize(std::shared_ptr<Engine> engine) {
 void IApplication::destroy()
 {
     if (engine) {
-        engine->destroyAllWindows();
         engine.reset();
     }
 }

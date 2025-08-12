@@ -2,18 +2,19 @@
 
 #include "utils/pch.h"
 #include "utils/events.h"
+#include "utils/event_interface.h"
 #include "engine/engine.h"
 
 // forward declaration
 class Engine;
 
-class IApplication : public std::enable_shared_from_this<IApplication>
+class IApplication : public IWindowEventHandler, public std::enable_shared_from_this<IApplication>
 {
 public:
     /**
      * Create the DirectX demo using the specified window dimensions.
      */
-    IApplication(const std::wstring &name, int width, int height, bool vSync);
+    IApplication(WindowConfig& config);
     virtual ~IApplication();
 
     /**
@@ -38,30 +39,27 @@ public:
 
     int getWidth() const
     {
-        return width;
+        return config.width;
     }
 
     int getHeight() const
     {
-        return height;
+        return config.height;
     }
 
     void setWidth(int width)
     {
-        width = width;
+        this->config.width = width;
     }
 
     void setHeight(int height)
     {
-        height = height;
+        this->config.height = height;
     }
 
 protected:
     std::shared_ptr<Engine> engine;
 
 private:
-    std::wstring name;
-    int width;
-    int height;
-    bool vsync;
+    WindowConfig& config;
 };

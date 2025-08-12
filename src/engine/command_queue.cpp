@@ -154,3 +154,7 @@ void CommandQueue::fenceWait(UINT64 value) {
         WaitForSingleObject(fenceEvent, DWORD_MAX);
     }
 }
+
+void CommandQueue::flush() {
+    fenceWait(signalFence());
+}

@@ -1,7 +1,7 @@
 #include "window_manger.h"
 #include "window.h"
 
-WindowManger::WindowManger(HINSTANCE hInstance) : hInstance(hInstance) {}
+WindowManager::WindowManager(HINSTANCE hInstance) : hInstance(hInstance) {}
 
 std::shared_ptr<Window> WindowManager::createWindow(const std::wstring &name, const WindowConfig &config)
 {
@@ -14,7 +14,7 @@ std::shared_ptr<Window> WindowManager::createWindow(const std::wstring &name, co
 
     auto window = std::make_shared<Window>(hInstance, config);
 
-    windowsByHandle.emplace(hwnd, window);
+    windowsByHandle.emplace(window->getHwnd(), window);
     windowsByName.emplace(name, window);
 
     return window;
@@ -56,8 +56,8 @@ void WindowManager::destroyAll()
 }
 
 // Singleton access (optional)
-WindowManager &WindowManager::getInstance()
-{
-    static WindowManager instance;
-    return instance;
-}
+// WindowManager &WindowManager::getInstance()
+// {
+//     static WindowManager instance;
+//     return instance;
+// }
