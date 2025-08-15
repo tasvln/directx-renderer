@@ -6,88 +6,85 @@
 
 #include "DirectXMath.h"
 
-class Application : public IApplication, public IWindowEventHandler {
-    public:
-        using super = IApplication;
+class Application : public IApplication
+{
+public:
+    using super = IApplication;
 
-        Application(WindowConfig& config);
+    Application(HINSTANCE hInstance, WindowConfig &config);
 
-        virtual bool loadContent() override;
-        virtual void unloadContent() override;
+    virtual bool loadContent() override;
+    virtual void unloadContent() override;
 
-    protected:
-        virtual void onUpdate(UpdateEventArgs& e) override;
-        virtual void onRender(RenderEventArgs& e) override;
-        virtual void onKeyPressed(KeyEventArgs& e) override;
-        virtual void onMouseWheel(MouseWheelEventArgs& e) override;
-        virtual void onResize(ResizeEventArgs& e) override;
-        
-    private:
-        void transitionResource(
-            ComPtr<ID3D12GraphicsCommandList2> commandList,
-            ComPtr<ID3D12Resource> resource,
-            D3D12_RESOURCE_STATES beforeState, 
-            D3D12_RESOURCE_STATES afterState
-        );
+protected:
+    virtual void onUpdate(UpdateEventArgs &e) override;
+    virtual void onRender(RenderEventArgs &e) override;
+    virtual void onKeyPressed(KeyEventArgs &e) override;
+    virtual void onMouseWheel(MouseWheelEventArgs &e) override;
+    virtual void onResize(ResizeEventArgs &e) override;
+    virtual void onWindowDestroy() override;
 
-        void clearRTV(
-            ComPtr<ID3D12GraphicsCommandList2> commandList,
-            D3D12_CPU_DESCRIPTOR_HANDLE rtv, 
-            FLOAT* clearColor
-        );
+private:
+    void transitionResource(
+        ComPtr<ID3D12GraphicsCommandList2> commandList,
+        ComPtr<ID3D12Resource> resource,
+        D3D12_RESOURCE_STATES beforeState,
+        D3D12_RESOURCE_STATES afterState);
 
-        void clearDepth(
-            ComPtr<ID3D12GraphicsCommandList2> commandList,
-            D3D12_CPU_DESCRIPTOR_HANDLE dsv, 
-            FLOAT depth = 1.0f 
-        );
+    void clearRTV(
+        ComPtr<ID3D12GraphicsCommandList2> commandList,
+        D3D12_CPU_DESCRIPTOR_HANDLE rtv,
+        FLOAT *clearColor);
 
-        // this function creates the gpu buffer
-        void updateBufferResource(
-            ComPtr<ID3D12GraphicsCommandList2> commandList,
-            ID3D12Resource** pDestinationResource, 
-            ID3D12Resource** pIntermediateResource,
-            size_t numElements, 
-            size_t elementSize, 
-            const void* bufferData, 
-            D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE 
-        );
+    void clearDepth(
+        ComPtr<ID3D12GraphicsCommandList2> commandList,
+        D3D12_CPU_DESCRIPTOR_HANDLE dsv,
+        FLOAT depth = 1.0f);
 
-        void resizeDepthBuffer(
-            int width, 
-            int height
-        );
+    // this function creates the gpu buffer
+    void updateBufferResource(
+        ComPtr<ID3D12GraphicsCommandList2> commandList,
+        ID3D12Resource **pDestinationResource,
+        ID3D12Resource **pIntermediateResource,
+        size_t numElements,
+        size_t elementSize,
+        const void *bufferData,
+        D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
 
-        uint64_t fenceValues[FRAMEBUFFERCOUNT] {};
+    void resizeDepthBuffer(
+        int width,
+        int height);
 
-        // vertex
-        ComPtr<ID3D12Resource> vertexBuffer;
-        D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
+    uint64_t fenceValues[FRAMEBUFFERCOUNT]{};
 
-        // index
-        ComPtr<ID3D12Resource> indexBuffer;
-        D3D12_INDEX_BUFFER_VIEW indexBufferView;
+    // vertex
+    ComPtr<ID3D12Resource> vertexBuffer;
+    D3D12_VERTEX_BUFFER_VIEW vertexBufferView;
 
-        // Depth buffer.
-        ComPtr<ID3D12Resource> depthBuffer;
-        // Descriptor heap for depth buffer.
-        ComPtr<ID3D12DescriptorHeap> dsvHeap;
+    // index
+    ComPtr<ID3D12Resource> indexBuffer;
+    D3D12_INDEX_BUFFER_VIEW indexBufferView;
 
-        // Root signature
-        ComPtr<ID3D12RootSignature> rootSignature;
+    // Depth buffer.
+    ComPtr<ID3D12Resource> depthBuffer;
+    // Descriptor heap for depth buffer.
+    ComPtr<ID3D12DescriptorHeap> dsvHeap;
 
-        // Pipeline state object.
-        ComPtr<ID3D12PipelineState> pipelineState;
-    
-        // from vulkan and opengl -> this make so much SENSEEEEEE
-        D3D12_VIEWPORT viewport;
-        D3D12_RECT scissorRect;
+    // Root signature
+    ComPtr<ID3D12RootSignature> rootSignature;
 
-        float fov; // field of view but i call it pov for some weird reason
+    // Pipeline state object.
+    ComPtr<ID3D12PipelineState> pipelineState;
 
-        XMMATRIX modelMatrix;
-        XMMATRIX viewMatrix;
-        XMMATRIX projectionMatrix;
+    // from vulkan and opengl -> this make so much SENSEEEEEE
+    D3D12_VIEWPORT viewport;
+    D3D12_RECT scissorRect;
 
-        bool isResourceLoaded;
+    float fov; // field of view but i call it pov for some weird reason
+
+    XMMATRIX modelMatrix;
+    XMMATRIX viewMatrix;
+    XMMATRIX projectionMatrix;
+
+    bool isResourceLoaded;
 };

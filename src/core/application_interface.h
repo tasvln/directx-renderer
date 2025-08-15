@@ -14,7 +14,7 @@ public:
     /**
      * Create the DirectX demo using the specified window dimensions.
      */
-    IApplication(WindowConfig& config);
+    IApplication(HINSTANCE hInstance, const WindowConfig &config);
     virtual ~IApplication();
 
     /**
@@ -58,8 +58,10 @@ public:
     }
 
 protected:
-    std::shared_ptr<Engine> engine;
+    // std::shared_ptr<Engine> engine;
+    Engine &engine;
 
 private:
-    WindowConfig& config;
+    WindowConfig config;
+    HINSTANCE hInstance;
 };

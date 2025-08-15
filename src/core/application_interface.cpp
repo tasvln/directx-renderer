@@ -1,40 +1,44 @@
 #include "application_interface.h"
 
-IApplication::IApplication(
-    WindowConfig& config
-) : 
-    config(config)
-{}
+IApplication::IApplication(HINSTANCE hInstance, const WindowConfig &config) : config(config), hInstance(hInstance)
+{
+}
 
-bool IApplication::initialize() {
+bool IApplication::initialize()
+{
     // Check for DirectX Math library support.
     if (!DirectX::XMVerifyCPUSupport())
     {
         MessageBox(
-            NULL, 
-            L"Failed to verify DirectX Math library support.", 
+            NULL,
+            L"Failed to verify DirectX Math library support.",
             L"Error",
-            MB_OK | MB_ICONERROR
-        );
+            MB_OK | MB_ICONERROR);
         LOG_ERROR(L"Failed to verify DirectX Math library support, Application Initialization Failed");
         return false;
     }
- 
+
     // Create the window through the engine
-    engine = Engine::getEnginePtr();
+    engine = Engine::get();
     auto window = engine->createRenderWindow(config);
-    
+
+    engine.init(
+        hInstance,
+        config,
+        window->getHwnd());
+
     // Register this object as the event handler
     window->registerEventHandler(shared_from_this());
 
     window->show();
- 
+
     return true;
 }
 
 void IApplication::destroy()
 {
-    if (engine) {
+    if (engine)
+    {
         engine.reset();
     }
 }
@@ -61,8 +65,8 @@ void IApplication::destroy()
 // }
 
 // void IApplication::onWindowDestroy() {
-//     // If the Window which we are registered to is 
-//     // destroyed, then any resources which are associated 
+//     // If the Window which we are registered to is
+//     // destroyed, then any resources which are associated
 //     // to the window must be released.
 //     unloadContent();
 // }
