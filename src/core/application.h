@@ -17,6 +17,7 @@ public:
     virtual void unloadContent() override;
 
 protected:
+    int run();
     virtual void onUpdate(UpdateEventArgs &e) override;
     virtual void onRender(RenderEventArgs &e) override;
     virtual void onKeyPressed(KeyEventArgs &e) override;

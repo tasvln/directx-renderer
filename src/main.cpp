@@ -1,7 +1,7 @@
 #include "utils/pch.h"
 #include "core/application.h"
 
-std::unique_ptr<Application> application;
+std::shared_ptr<Application> application;
 
 WindowConfig config = {
     .appName = L"DirectX Graphic Renderer",
@@ -16,7 +16,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     int code = 0;
     // create window
 
-    application = std::make_unique<Application>(hInstance, config);
+    application = std::make_shared<Application>(hInstance, config);
 
     try
     {

@@ -16,7 +16,7 @@
 
 void Engine::init(
     HINSTANCE hInstance,
-    const WindowConfig &config,
+    WindowConfig &config,
     HWND hwnd)
 {
     this->hInstance = hInstance;

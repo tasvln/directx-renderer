@@ -22,12 +22,14 @@ public:
     // Window actions
     void show();
     void pumpMessages();        // process OS messages only
-    int  run();                 // main loop (single-window)
     void destroy();
     void quit(int exitCode = 0);
 
     void setFullScreen(bool toggleFullscreen);
     void toggleFullscreen();
+
+    void toggleVsync();
+    void setVsync();
     
     HWND createWindow(HINSTANCE hInstance);
 

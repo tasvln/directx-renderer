@@ -19,10 +19,10 @@ bool IApplication::initialize()
     }
 
     // Create the window through the engine
-    engine = Engine::get();
-    auto window = engine->createRenderWindow(config);
+    engine = &Engine::get();
+    window = engine->createRenderWindow(config);
 
-    engine.init(
+    engine->init(
         hInstance,
         config,
         window->getHwnd());
@@ -39,7 +39,8 @@ void IApplication::destroy()
 {
     if (engine)
     {
-        engine.reset();
+        engine->flush();
+        engine = nullptr;
     }
 }
 

@@ -69,38 +69,6 @@ void Window::pumpMessages()
     }
 }
 
-int Window::run()
-{
-    MSG msg = {};
-    while (msg.message != WM_QUIT)
-    {
-        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else
-        {
-            // idle: fire update + render via event handler
-            auto now = std::chrono::steady_clock::now();
-            double elapsed = SecondsFromDuration(now - lastTime);
-            double total = SecondsFromDuration(now - startTime);
-            lastTime = now;
-
-            if (auto handler = eventHandler.lock())
-            {
-                UpdateEventArgs uargs(elapsed, total);
-                handler->onUpdate(uargs);
-
-                RenderEventArgs rargs(elapsed, total);
-                handler->onRender(rargs);
-            }
-        }
-    }
-
-    return static_cast<int>(msg.wParam);
-}
-
 void Window::destroy()
 {
     if (hwnd)

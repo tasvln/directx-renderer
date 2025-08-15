@@ -38,6 +38,27 @@ Application::Application(
 {
 }
 
+int Application::run() {
+    if (!initialize()) return 1;
+    if (!loadContent()) return 2;
+
+    
+    MSG msg = {};
+    while (msg.message != WM_QUIT)
+    {
+        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }
+
+    unloadContent();
+    destroy();
+
+    return static_cast<int>(msg.wParam);
+}
+
 void Application::updateBufferResource(
     ComPtr<ID3D12GraphicsCommandList2> commandList,
     ID3D12Resource **pDestinationResource,
@@ -45,9 +66,9 @@ void Application::updateBufferResource(
     size_t numElements,
     size_t elementSize,
     const void *bufferData,
-    D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE)
+    D3D12_RESOURCE_FLAGS flags)
 {
-    auto device = Engine::get().getDevice();
+    auto device = Engine::get().getDevice().getDevice();
 
     size_t bufferSize = numElements * elementSize;
 
@@ -91,7 +112,7 @@ void Application::updateBufferResource(
 
 bool Application::loadContent()
 {
-    auto device = Engine::get().getDevice();
+    auto device = Engine::get().getDevice().getDevice();
     auto queue = Engine::get().getCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
     auto list = queue->getCommandList();
 
@@ -231,8 +252,8 @@ bool Application::loadContent()
             &pipelineStateStreamDesc,
             IID_PPV_ARGS(&pipelineState)));
 
-    auto fenceValue = queue->ExecuteCommandList(list);
-    queue->WaitForFenceValue(fenceValue);
+    auto fenceValue = queue->executeCommandList(list);
+    queue->fenceWait(fenceValue);
 
     isResourceLoaded = true;
 
@@ -294,7 +315,7 @@ void Application::resizeDepthBuffer(int width, int height)
         width = std::max(1, width);
         height = std::max(1, height);
 
-        auto device = Engine::get().getDevice();
+        auto device = Engine::get().getDevice().getDevice();
 
         // Resize screen dependent resources.
         // Create a depth buffer.
@@ -343,7 +364,7 @@ void Application::onResize(ResizeEventArgs &e)
     IApplication::setWidth(e.width);
     IApplication::setHeight(e.height);
 
-    viewport = CD3DX12_VIEWPORT(0, 0, float(e.width), float(e.height));
+    viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, float(e.width), float(e.height));
     Engine::get().resize(e.width, e.height);
     resizeDepthBuffer(e.width, e.height);
 }
@@ -391,10 +412,10 @@ void Application::onUpdate(UpdateEventArgs &e)
 void Application::onRender(RenderEventArgs &e)
 {
     auto commandQueue = Engine::get().getCommandQueue(D3D12_COMMAND_LIST_TYPE_DIRECT);
-    auto commandList = commandQueue->GetCommandList();
+    auto commandList = commandQueue->getCommandList();
 
     UINT currentIndex = Engine::get().getCurrentIndex();
-    auto backBuffer = Engine::get().getCurrentBackBuffer();
+    auto backBuffer = Engine::get().getSwapchain().getBackBuffer(currentIndex);
 
     auto rtv = Engine::get().getCurrentRTV();
 
@@ -440,11 +461,11 @@ void Application::onRender(RenderEventArgs &e)
             D3D12_RESOURCE_STATE_RENDER_TARGET,
             D3D12_RESOURCE_STATE_PRESENT);
 
-        fenceValues[currentIndex] = commandQueue->ExecuteCommandList(commandList);
+        fenceValues[currentIndex] = commandQueue->executeCommandList(commandList);
 
         currentIndex = Engine::get().present();
 
-        commandQueue->WaitForFenceValue(fenceValues[currentIndex]);
+        commandQueue->fenceWait(fenceValues[currentIndex]);
     }
 }
 
@@ -453,15 +474,15 @@ void Application::onKeyPressed(KeyEventArgs &e)
     switch (e.key)
     {
     case KeyCode::Key::Escape:
-        Engine::get().quit(0);
+        window->quit(0); // Call directly on Window
         break;
     case KeyCode::Key::F11:
         if (e.alt)
-            Engine::get().toggleFullscreen();
+            window->toggleFullscreen();
         break;
-    case KeyCode::Key::V:
-        Engine::get().toggleVsync();
-        break;
+    // case KeyCode::Key::V:
+    //     window->toggleVsync();
+    //     break;
     }
 }
 

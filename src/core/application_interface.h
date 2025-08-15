@@ -58,8 +58,8 @@ public:
     }
 
 protected:
-    // std::shared_ptr<Engine> engine;
-    Engine &engine;
+    std::shared_ptr<Window> window;
+    Engine* engine;
 
 private:
     WindowConfig config;

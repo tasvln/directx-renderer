@@ -17,12 +17,12 @@ public:
         return instance;
     }
 
-    Engine(const Engine &) = delete;
-    Engine &operator=(const Engine &) = delete;
+    // Engine(const Engine &) = delete;
+    // Engine &operator=(const Engine &) = delete;
 
     void init(
         HINSTANCE hInstance,
-        const WindowConfig &config,
+        WindowConfig &config,
         HWND hwnd);
 
     void resize(uint32_t width, uint32_t height);
@@ -40,6 +40,14 @@ public:
     D3D12_CPU_DESCRIPTOR_HANDLE getCurrentRTV() const
     {
         return CD3DX12_CPU_DESCRIPTOR_HANDLE(rtvHeap->GetCPUDescriptorHandleForHeapStart(), currentIndex, rtvDescriptorSize);
+    }
+
+    const Device& getDevice() const {
+        return *device;
+    }
+
+    const Swapchain& getSwapchain() const {
+        return *swapchain;
     }
 
 private:
