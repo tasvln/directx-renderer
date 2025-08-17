@@ -38,11 +38,13 @@ Application::Application(
 {
 }
 
-int Application::run() {
-    if (!initialize()) return 1;
-    if (!loadContent()) return 2;
+int Application::run()
+{
+    if (!initialize())
+        return 1;
+    if (!loadContent())
+        return 2;
 
-    
     MSG msg = {};
     while (msg.message != WM_QUIT)
     {
@@ -480,9 +482,9 @@ void Application::onKeyPressed(KeyEventArgs &e)
         if (e.alt)
             window->toggleFullscreen();
         break;
-    // case KeyCode::Key::V:
-    //     window->toggleVsync();
-    //     break;
+        // case KeyCode::Key::V:
+        //     window->toggleVsync();
+        //     break;
     }
 }
 
