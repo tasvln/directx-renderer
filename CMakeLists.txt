@@ -39,6 +39,7 @@ target_link_libraries(
         gdi32       # Common for window creation
         d3d12       # DirectX 12
         dxgi        # DXGI interface
+        dxguid
         d3dcompiler # Shader compiler
         Microsoft::DirectX-Headers
 )
@@ -49,4 +50,10 @@ target_compile_definitions(DIRECTX3D PRIVATE UNICODE _UNICODE)
 # (uses WinMain instead of main)
 set_target_properties(DIRECTX3D PROPERTIES
     WIN32_EXECUTABLE TRUE
+)
+
+add_custom_command(
+    TARGET DIRECTX3D POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/assets/shaders/bin $<TARGET_FILE_DIR:DIRECTX3D>/assets/shaders
 )

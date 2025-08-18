@@ -66,7 +66,7 @@ private:
     uint64_t frameFenceCounts[FRAMEBUFFERCOUNT]{};
     BOOL isTearingSupported = false;
 
-    FrameTimer timer;
+    // FrameTimer timer;
 
     // ComPtr<ID3D12Resource> backBuffers[FRAMEBUFFERCOUNT];
     ComPtr<ID3D12DescriptorHeap> rtvHeap;

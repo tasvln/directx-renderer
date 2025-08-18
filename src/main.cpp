@@ -13,15 +13,10 @@ WindowConfig config = {
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    int code = 0;
-    // create window
-
-    application = std::make_shared<Application>(hInstance, config);
-
     try
     {
-
-        return 0;
+        application = std::make_shared<Application>(hInstance, config);
+        return application->run();
     }
     catch (const std::exception &e)
     {

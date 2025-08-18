@@ -36,13 +36,19 @@ Application::Application(
       fov(45.0f), // Default 45-degree FOV
       isResourceLoaded(false)
 {
+    LOG_INFO(L"IApplication & Application init");
 }
 
 int Application::run() {
-    if (!initialize()) return 1;
-    if (!loadContent()) return 2;
+    Timer timer;
 
+    LOG_INFO(L"IApplication initialize() before");
+    if (!initialize()) return 1;
     
+    LOG_INFO(L"IApplication initialize() called");
+    if (!loadContent()) return 2;
+    LOG_INFO(L"Application loadContent() called");
+
     MSG msg = {};
     while (msg.message != WM_QUIT)
     {
@@ -50,6 +56,27 @@ int Application::run() {
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
+        }
+        else
+        {
+            // Tick timer each frame
+            timer.tick();
+
+            // Build UpdateEventArgs (your system expects this)
+            UpdateEventArgs updateArgs(timer.getDeltaSeconds(), timer.getTotalSeconds());
+            onUpdate(updateArgs);
+
+            // Build RenderEventArgs (if your system uses one)
+            RenderEventArgs renderArgs(timer.getDeltaSeconds(), timer.getTotalSeconds());
+            onRender(renderArgs);
+
+            // Optional: update window title with FPS
+            std::wstring title = L"DirectX12 App - " + timer.getFPSString();
+            if (window) {
+                SetWindowTextW(window->getHwnd(), title.c_str());
+            } else {
+                LOG_ERROR(L"Window is null!");
+            }
         }
     }
 
@@ -61,54 +88,64 @@ int Application::run() {
 
 void Application::updateBufferResource(
     ComPtr<ID3D12GraphicsCommandList2> commandList,
-    ID3D12Resource **pDestinationResource,
-    ID3D12Resource **pIntermediateResource,
+    ID3D12Resource** pDestinationResource,
+    ID3D12Resource** pIntermediateResource,
     size_t numElements,
     size_t elementSize,
-    const void *bufferData,
+    const void* bufferData,
     D3D12_RESOURCE_FLAGS flags)
 {
+    LOG_INFO(L"updateBufferResource() -> begins");
+
     auto device = Engine::get().getDevice().getDevice();
+    LOG_INFO(L"updateBufferResource() -> device acquired");
 
     size_t bufferSize = numElements * elementSize;
+    LOG_INFO(L"updateBufferResource() -> bufferSize: %zu", bufferSize);
 
-    // Create a committed resource for the GPU resource in a default heap.
-    throwFailed(
-        device->CreateCommittedResource(
-            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
-            D3D12_HEAP_FLAG_NONE,
-            &CD3DX12_RESOURCE_DESC::Buffer(bufferSize, flags),
-            D3D12_RESOURCE_STATE_COMMON,
-            nullptr,
-            IID_PPV_ARGS(pDestinationResource)));
+    // Create GPU destination resource
+    CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize, flags);
+    CD3DX12_HEAP_PROPERTIES defaultHeapProps(D3D12_HEAP_TYPE_DEFAULT);
 
-    // Create an committed resource for the upload.
+    throwFailed(device->CreateCommittedResource(
+        &defaultHeapProps,
+        D3D12_HEAP_FLAG_NONE,
+        &bufferDesc,
+        D3D12_RESOURCE_STATE_COMMON,
+        nullptr,
+        IID_PPV_ARGS(pDestinationResource)));
+    LOG_INFO(L"updateBufferResource() -> destination GPU resource created");
+
     if (bufferData)
     {
-        throwFailed(
-            device->CreateCommittedResource(
-                &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-                D3D12_HEAP_FLAG_NONE,
-                &CD3DX12_RESOURCE_DESC::Buffer(bufferSize),
-                D3D12_RESOURCE_STATE_GENERIC_READ,
-                nullptr,
-                IID_PPV_ARGS(pIntermediateResource)));
+        // Create intermediate upload resource
+        CD3DX12_HEAP_PROPERTIES uploadHeapProps(D3D12_HEAP_TYPE_UPLOAD);
+        CD3DX12_RESOURCE_DESC uploadDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
+
+        throwFailed(device->CreateCommittedResource(
+            &uploadHeapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &uploadDesc,
+            D3D12_RESOURCE_STATE_GENERIC_READ,
+            nullptr,
+            IID_PPV_ARGS(pIntermediateResource)));
+        LOG_INFO(L"updateBufferResource() -> intermediate upload resource created");
 
         D3D12_SUBRESOURCE_DATA subresourceData{};
         subresourceData.pData = bufferData;
         subresourceData.RowPitch = bufferSize;
         subresourceData.SlicePitch = subresourceData.RowPitch;
 
-        UpdateSubresources(
-            commandList.Get(),
-            *pDestinationResource,
-            *pIntermediateResource,
-            0,
-            0,
-            1,
-            &subresourceData);
+        LOG_INFO(L"updateBufferResource() -> about to call UpdateSubresources()");
+        UpdateSubresources(commandList.Get(),
+            *pDestinationResource, *pIntermediateResource,
+            0, 0, 1, &subresourceData);
+        LOG_INFO(L"updateBufferResource() -> UpdateSubresources finished");
     }
+
+    LOG_INFO(L"updateBufferResource() -> ends");
 }
+
 
 bool Application::loadContent()
 {
@@ -317,25 +354,28 @@ void Application::resizeDepthBuffer(int width, int height)
 
         auto device = Engine::get().getDevice().getDevice();
 
-        // Resize screen dependent resources.
         // Create a depth buffer.
         D3D12_CLEAR_VALUE optimizedClearValue = {};
         optimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
         optimizedClearValue.DepthStencil = {1.0f, 0};
 
+        CD3DX12_RESOURCE_DESC depthDesc = CD3DX12_RESOURCE_DESC::Tex2D(
+            DXGI_FORMAT_D32_FLOAT,
+            width,
+            height,
+            1,
+            0,
+            1,
+            0,
+            D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+
+        CD3DX12_HEAP_PROPERTIES defaultHeapProps(D3D12_HEAP_TYPE_DEFAULT);
+
         throwFailed(
             device->CreateCommittedResource(
-                &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+                &defaultHeapProps,
                 D3D12_HEAP_FLAG_NONE,
-                &CD3DX12_RESOURCE_DESC::Tex2D(
-                    DXGI_FORMAT_D32_FLOAT,
-                    width,
-                    height,
-                    1,
-                    0,
-                    1,
-                    0,
-                    D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL),
+                &depthDesc,
                 D3D12_RESOURCE_STATE_DEPTH_WRITE,
                 &optimizedClearValue,
                 IID_PPV_ARGS(&depthBuffer)));
@@ -353,6 +393,7 @@ void Application::resizeDepthBuffer(int width, int height)
             dsvHeap->GetCPUDescriptorHandleForHeapStart());
     }
 }
+
 
 void Application::onResize(ResizeEventArgs &e)
 {

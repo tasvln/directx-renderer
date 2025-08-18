@@ -41,6 +41,16 @@ Window::Window(
     LOG_INFO(L"RegisterClassEx created!");
 
     hwnd = createWindow(hInstance);
+    LOG_INFO(L"Window Created!");
+
+    LOG_INFO((std::wstring(L"HWND: ") + std::to_wstring(reinterpret_cast<std::uintptr_t>(hwnd))).c_str());
+
+    if (!hwnd) {
+        LOG_ERROR(L"Window handle is null!");
+        MessageBox(nullptr, L"Window handle is null!", L"Error", MB_ICONERROR);
+        // std::terminate(); // or 
+        throw std::runtime_error("Failed to create window");
+    }
 
     startTime = lastTime = std::chrono::steady_clock::now();
 }
@@ -52,11 +62,19 @@ Window::~Window()
 
 void Window::show()
 {
+    
+    LOG_INFO(L"before show");
     if (hwnd)
     {
+        LOG_INFO(L"inside show braces!");
         ShowWindow(hwnd, SW_SHOW);
+        LOG_INFO(L"ShowWindow(hwnd, SW_SHOW);");
         UpdateWindow(hwnd);
+        LOG_INFO(L"UpdateWindow(hwnd);");
+    } else {
+        LOG_INFO(L"Window handle is null!");
     }
+    LOG_INFO(L"after show");
 }
 
 void Window::pumpMessages()
@@ -221,21 +239,6 @@ LRESULT Window::handleWndProc(UINT msg, WPARAM wParam, LPARAM lParam)
     {
     case WM_PAINT:
     {
-        // compute times
-        auto now = std::chrono::steady_clock::now();
-        double elapsed = SecondsFromDuration(now - lastTime);
-        double total   = SecondsFromDuration(now - startTime);
-        lastTime = now;
-
-        if (handler)
-        {
-            UpdateEventArgs uargs(elapsed, total);
-            handler->onUpdate(uargs);
-
-            RenderEventArgs rargs(elapsed, total);
-            handler->onRender(rargs);
-        }
-
         ValidateRect(hwnd, nullptr);
         return 0;
     }

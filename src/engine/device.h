@@ -13,7 +13,7 @@ public:
     ComPtr<IDXGIAdapter4> selectAdapter(bool useWarp);
     ComPtr<ID3D12Device2> createDevice(ComPtr<IDXGIAdapter4> deviceAdapter);
 
-    void enableDebugLayer();
+    // void enableDebugLayer();
     void enableDeviceDebugLayer(ComPtr<ID3D12Device2> &debugDevice);
 
     bool checkForTearingSupport();

@@ -17,6 +17,7 @@ public:
     // Event wiring
     void registerEventHandler(std::shared_ptr<IWindowEventHandler> handler) { 
         eventHandler = handler; 
+        LOG_INFO(L"registerEventHandler -> eventHandler Passed!");
     }
 
     // Window actions

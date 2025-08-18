@@ -26,11 +26,14 @@ bool IApplication::initialize()
         hInstance,
         config,
         window->getHwnd());
+    LOG_INFO(L"Initialization Of Engine Complete!");
 
     // Register this object as the event handler
     window->registerEventHandler(shared_from_this());
+    LOG_INFO(L"window->registerEventHandler(shared_from_this());");
 
     window->show();
+    LOG_INFO(L"Initialization Of Application Complete!");
 
     return true;
 }

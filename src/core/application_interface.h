@@ -15,7 +15,7 @@ public:
      * Create the DirectX demo using the specified window dimensions.
      */
     IApplication(HINSTANCE hInstance, const WindowConfig &config);
-    virtual ~IApplication();
+    virtual ~IApplication() = default;
 
     /**
      *  Initialize the DirectX Runtime.
@@ -55,6 +55,10 @@ public:
     void setHeight(int height)
     {
         this->config.height = height;
+    }
+
+    Engine* getEngine() const {
+        return engine;
     }
 
 protected:

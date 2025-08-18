@@ -17,12 +17,12 @@ public:
         previousTime = currentTime;
 
         elapsedTime += deltaTime;
-        FrameCount++;
+        frameCount++;
 
         // Update FPS every second
         if (elapsedTime.count() >= 1.0) {
-            FPS = FrameCount / elapsedTime.count();
-            FrameCount = 0;
+            FPS = frameCount / elapsedTime.count();
+            frameCount = 0;
             elapsedTime = std::chrono::duration<double>(0);
         }
     }
@@ -52,6 +52,6 @@ private:
     std::chrono::high_resolution_clock::time_point previousTime;
     std::chrono::duration<double> deltaTime{0};
     std::chrono::duration<double> elapsedTime{0};
-    int FrameCount = 0;
+    int frameCount = 0;
     double FPS = 0.0;
 };

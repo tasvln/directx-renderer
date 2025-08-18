@@ -142,6 +142,8 @@ std::shared_ptr<Window> Engine::createRenderWindow(
 {
     // You may want to cache windows in maps if you want multiple windows later -> window manager but not needed rn
     auto window = std::make_shared<Window>(hInstance, config);
+    LOG_INFO(L"createRenderWindow TRIGGERED -> window created!");
+    
     return window;
 }
 

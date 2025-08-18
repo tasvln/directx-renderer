@@ -15,15 +15,22 @@ public:
 
     virtual bool loadContent() override;
     virtual void unloadContent() override;
+    
+    int run();
 
 protected:
-    int run();
     virtual void onUpdate(UpdateEventArgs &e) override;
     virtual void onRender(RenderEventArgs &e) override;
     virtual void onKeyPressed(KeyEventArgs &e) override;
     virtual void onMouseWheel(MouseWheelEventArgs &e) override;
     virtual void onResize(ResizeEventArgs &e) override;
     virtual void onWindowDestroy() override;
+
+    // other
+    virtual void onKeyReleased(KeyEventArgs &e) override {};
+    virtual void onMouseMoved(MouseMotionEventArgs &e) override {};
+    virtual void onMouseButtonPressed(MouseButtonEventArgs &e) override {};
+    virtual void onMouseButtonReleased(MouseButtonEventArgs &e) override {};
 
 private:
     void transitionResource(
@@ -45,12 +52,12 @@ private:
     // this function creates the gpu buffer
     void updateBufferResource(
         ComPtr<ID3D12GraphicsCommandList2> commandList,
-        ID3D12Resource **pDestinationResource,
-        ID3D12Resource **pIntermediateResource,
+        ID3D12Resource** pDestinationResource,
+        ID3D12Resource** pIntermediateResource,
         size_t numElements,
         size_t elementSize,
-        const void *bufferData,
-        D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
+        const void* bufferData,
+        D3D12_RESOURCE_FLAGS flags);
 
     void resizeDepthBuffer(
         int width,

@@ -68,7 +68,7 @@ class CommandQueue {
         // Keep track of command allocators that are "in-flight"
         struct AllocatorEntry
         {
-            UINT64 fenceValue;
+            UINT64 fenceValue = 0;
             ComPtr<ID3D12CommandAllocator> allocator;
         };
         
