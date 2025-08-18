@@ -521,9 +521,9 @@ void Application::onKeyPressed(KeyEventArgs &e)
         if (e.alt)
             window->toggleFullscreen();
         break;
-    // case KeyCode::Key::V:
-    //     window->toggleVsync();
-    //     break;
+        // case KeyCode::Key::V:
+        //     window->toggleVsync();
+        //     break;
     }
 }
 
