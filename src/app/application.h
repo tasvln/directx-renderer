@@ -1,9 +1,10 @@
 #pragma once
 
 #include "utils/pch.h"
-#include "engine/device.h"
 
 class Window;
+class Device;
+class CommandQueue;
 
 class Application
 {
@@ -31,4 +32,7 @@ class Application
         // unique pttrsssssss -> GPU resources
         std::unique_ptr<Window> window;
         std::unique_ptr<Device> device;
+        std::unique_ptr<CommandQueue> directCommandQueue;
+        // std::unique_ptr<CommandQueue> computeCommandQueue;
+        // std::unique_ptr<CommandQueue> copyCommandQueue;
 };

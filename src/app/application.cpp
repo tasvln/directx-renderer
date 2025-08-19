@@ -1,5 +1,7 @@
 #include "application.h"
 #include "window.h"
+#include "engine/device.h"
+#include "engine/command_queue.h"
 
 Application::Application(
     HINSTANCE hInstance, 
@@ -21,6 +23,24 @@ void Application::init() {
 
     device = std::make_unique<Device>(config.useWarp);
     LOG_INFO(L"Engine->DirectX 12 device initialized.");
+
+    directCommandQueue = std::make_unique<CommandQueue>(
+        device->getDevice(),
+        D3D12_COMMAND_LIST_TYPE_DIRECT
+    );
+    LOG_INFO(L"Engine->DirectX 12 directCommandQueue initialized.");
+
+    // computeCommandQueue = std::make_unique<CommandQueue>(
+    //     device->getDevice(),
+    //     D3D12_COMMAND_LIST_TYPE_COMPUTE
+    // );
+    // LOG_INFO(L"Engine->DirectX 12 computeCommandQueue initialized.");
+
+    // copyCommandQueue = std::make_unique<CommandQueue>(
+    //     device->getDevice(),
+    //     D3D12_COMMAND_LIST_TYPE_COPY
+    // );
+    // LOG_INFO(L"Engine->DirectX 12 copyCommandQueue initialized.");
 }
 
 int Application::run() {
