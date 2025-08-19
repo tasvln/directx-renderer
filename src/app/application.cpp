@@ -8,14 +8,19 @@ Application::Application(
     config(config) 
 {
     window = std::make_unique<Window>(hInstance, config, this);
+
+    init();
 }
 
 Application::~Application() {
-    
+
 }
 
 void Application::init() {
     LOG_INFO(L"Initializing Engine Classes");
+
+    device = std::make_unique<Device>(config.useWarp);
+    LOG_INFO(L"Engine->DirectX 12 device initialized.");
 }
 
 int Application::run() {
@@ -40,7 +45,7 @@ int Application::run() {
 
 void Application::onResize(UINT width, UINT height)
 {
-    LOG_INFO(L"Application resize: %dx%d", width, height);
+    // LOG_INFO(L"Application resize: %dx%d", width, height);
     // Resize swapchain & depth buffer here
 }
 

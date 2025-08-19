@@ -3,8 +3,11 @@
 Device::Device(bool useWarp)
 {
     enableDebugLayer();
+    
     supportTearing = checkForTearingSupport();
+
     adapter = selectAdapter(useWarp);
+
     device = createDevice(adapter);
 
     LOG_INFO(L"Device->DirectX 12 device initialized.");

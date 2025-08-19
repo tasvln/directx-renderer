@@ -30,5 +30,5 @@ class Application
 
         // unique pttrsssssss -> GPU resources
         std::unique_ptr<Window> window;
-        // std::unique_ptr<Device> device;
+        std::unique_ptr<Device> device;
 };

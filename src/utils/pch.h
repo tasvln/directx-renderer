@@ -85,7 +85,6 @@ struct WindowConfig {
     uint32_t height;
     bool enabledDirectX;
     bool useWarp;
-    bool vsync = true;
     bool fullscreen = false;
     bool resizable = true;
 };
