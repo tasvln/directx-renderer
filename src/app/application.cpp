@@ -1,8 +1,10 @@
 #include "application.h"
 #include "window.h"
+
 #include "engine/device.h"
 #include "engine/command_queue.h"
 #include "engine/swapchain.h"
+#include "engine/mesh.h"
 
 Application::Application(
     HINSTANCE hInstance, 
@@ -71,6 +73,38 @@ void Application::init() {
     currentBackBufferIndex = swapchain->getSwapchain()->GetCurrentBackBufferIndex();
 
     LOG_INFO(L"Application Class initialized!");
+    LOG_INFO(L"-- Resources --");
+
+    std::vector<VertexStruct> vertices =
+    {
+        {{-1.0f, -1.0f, -1.0f}, {1,0,0}}, // red
+        {{-1.0f, +1.0f, -1.0f}, {0,1,0}}, // green
+        {{+1.0f, +1.0f, -1.0f}, {0,0,1}}, // blue
+        {{+1.0f, -1.0f, -1.0f}, {1,1,0}}, // yellow
+        {{-1.0f, -1.0f, +1.0f}, {1,0,1}}, // magenta
+        {{-1.0f, +1.0f, +1.0f}, {0,1,1}}, // cyan
+        {{+1.0f, +1.0f, +1.0f}, {1,1,1}}, // white
+        {{+1.0f, -1.0f, +1.0f}, {0,0,0}}, // black
+    };
+
+    // 36 indices for cube (12 triangles)
+    std::vector<uint32_t> indices =
+    {
+        0,1,2, 0,2,3,   // front
+        4,6,5, 4,7,6,   // back
+        4,5,1, 4,1,0,   // left
+        3,2,6, 3,6,7,   // right
+        1,5,6, 1,6,2,   // top
+        4,0,3, 4,3,7    // bottom
+    };
+
+    // create buffers
+    mesh = std::make_unique<Mesh>(
+        device->getDevice(),
+        vertices,
+        indices
+    );
+    LOG_INFO(L"Mesh Resource initialized!");
 }
 
 int Application::run() {

@@ -89,6 +89,13 @@ struct WindowConfig {
     bool resizable = true;
 };
 
+struct VertexStruct
+{
+    float position[3];
+    float color[3];
+    // float texcoord[2];
+};
+
 inline void throwFailed(HRESULT hr) {
     if (FAILED(hr)) {
         LOG_ERROR(L"throwFailed: HRESULT = 0x%08X", hr);

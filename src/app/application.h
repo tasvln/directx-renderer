@@ -6,6 +6,7 @@ class Window;
 class Device;
 class CommandQueue;
 class Swapchain;
+class Mesh;
 
 class Application
 {
@@ -41,4 +42,5 @@ class Application
         // std::unique_ptr<CommandQueue> computeCommandQueue;
         // std::unique_ptr<CommandQueue> copyCommandQueue;
         std::unique_ptr<Swapchain> swapchain;
+        std::unique_ptr<Mesh> mesh;
 };
