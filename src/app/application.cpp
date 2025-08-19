@@ -10,6 +10,10 @@ Application::Application(
     window = std::make_unique<Window>(hInstance, config, this);
 }
 
+Application::~Application() {
+    
+}
+
 void Application::init() {
     LOG_INFO(L"Initializing Engine Classes");
 }
