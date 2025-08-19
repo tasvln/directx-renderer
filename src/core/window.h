@@ -49,5 +49,4 @@ private:
     LRESULT handleWndProc(UINT msg, WPARAM wParam, LPARAM lParam);
 
     // helpers
-    void enableDebugLayer();
 };

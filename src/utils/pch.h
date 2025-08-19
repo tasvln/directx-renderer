@@ -1,20 +1,42 @@
 #pragma once
 
+#pragma once
+
+#include <winsdkver.h>
+#define _WIN32_WINNT 0x0A00
+#include <sdkddkver.h>
+
+// Use the C++ standard templated min/max
 #define NOMINMAX
+
+// DirectX apps don't need GDI
 #define NODRAWTEXT
 #define NOGDI
 #define NOBITMAP
 
+// Include <mcx.h> if you need this
+#define NOMCX
+
+// Include <winsvc.h> if you need this
+#define NOSERVICE
+
+// WinHelp is deprecated
+#define NOHELP
+
 #define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#include <Windows.h>
+#include <wrl/client.h>
+#include <wrl/event.h>
 
 #include <shellapi.h>
-#include <wrl.h>
+
+#include <d3d12.h>
 
 #include <dxgi1_6.h>
+
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
-#include <d3d12.h>
+
 #include <directx/d3dx12.h>
 
 #include <iostream>
@@ -23,11 +45,27 @@
 #include <chrono>
 #include <memory>
 #include <filesystem>
+#include <vector>
+
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <cwchar>
+#include <exception>
+#include <stdexcept>
+#include <system_error>
+#include <functional>
 
 #include <string>
 #include <fstream>
 
 #include "logger.h"
+
+#ifdef _DEBUG
+    #include <dxgidebug.h>
+#endif
 
 #define LOG_INFO(fmt, ...)    Logger::instance().log(LogType::Info,    __FILE__, __FUNCTION__, __LINE__, fmt, __VA_ARGS__)
 #define LOG_WARNING(fmt, ...) Logger::instance().log(LogType::Warning, __FILE__, __FUNCTION__, __LINE__, fmt, __VA_ARGS__)

@@ -16,9 +16,7 @@ Window::Window(
     // to achieve 100% scaling while still allowing non-client window content to
     // be rendered in a DPI sensitive fashion.
     SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-
-    enableDebugLayer();
-
+    
     WNDCLASSEXW wc = {};
     wc.cbSize = sizeof(WNDCLASSEXW);
     wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -99,20 +97,6 @@ void Window::destroy()
 void Window::quit(int exitCode)
 {
     PostQuitMessage(exitCode);
-}
-
-void Window::enableDebugLayer()
-{
-#if defined(_DEBUG)
-    ComPtr<ID3D12Debug> debugController;
-    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
-    {
-        debugController->EnableDebugLayer();
-    } else
-    {
-        LOG_ERROR(L"Failed to enable debug layer!");
-    }
-#endif
 }
 
 void Window::setFullScreen(bool toggleFullscreen) {

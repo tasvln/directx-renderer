@@ -107,13 +107,16 @@ void Application::updateBufferResource(
     CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize, flags);
     CD3DX12_HEAP_PROPERTIES defaultHeapProps(D3D12_HEAP_TYPE_DEFAULT);
 
-    throwFailed(device->CreateCommittedResource(
-        &defaultHeapProps,
-        D3D12_HEAP_FLAG_NONE,
-        &bufferDesc,
-        D3D12_RESOURCE_STATE_COMMON,
-        nullptr,
-        IID_PPV_ARGS(pDestinationResource)));
+    throwFailed(
+        device->CreateCommittedResource(
+            &defaultHeapProps,
+            D3D12_HEAP_FLAG_NONE,
+            &bufferDesc,
+            D3D12_RESOURCE_STATE_COMMON,
+            nullptr,
+            IID_PPV_ARGS(pDestinationResource)
+        )
+    );
     LOG_INFO(L"updateBufferResource() -> destination GPU resource created");
 
     if (bufferData)
@@ -122,13 +125,16 @@ void Application::updateBufferResource(
         CD3DX12_HEAP_PROPERTIES uploadHeapProps(D3D12_HEAP_TYPE_UPLOAD);
         CD3DX12_RESOURCE_DESC uploadDesc = CD3DX12_RESOURCE_DESC::Buffer(bufferSize);
 
-        throwFailed(device->CreateCommittedResource(
-            &uploadHeapProps,
-            D3D12_HEAP_FLAG_NONE,
-            &uploadDesc,
-            D3D12_RESOURCE_STATE_GENERIC_READ,
-            nullptr,
-            IID_PPV_ARGS(pIntermediateResource)));
+        throwFailed(
+            device->CreateCommittedResource(
+                &uploadHeapProps,
+                D3D12_HEAP_FLAG_NONE,
+                &uploadDesc,
+                D3D12_RESOURCE_STATE_GENERIC_READ,
+                nullptr,
+                IID_PPV_ARGS(pIntermediateResource)
+            )
+        );
         LOG_INFO(L"updateBufferResource() -> intermediate upload resource created");
 
         D3D12_SUBRESOURCE_DATA subresourceData{};
@@ -136,79 +142,158 @@ void Application::updateBufferResource(
         subresourceData.RowPitch = bufferSize;
         subresourceData.SlicePitch = subresourceData.RowPitch;
 
+        // Log all relevant variables
+        LOG_INFO(L"updateBufferResource() -> BEGIN logging variables:");
+        LOG_INFO(L"    pDestinationResource = 0x%p", *pDestinationResource);
+        LOG_INFO(L"    pIntermediateResource = 0x%p", *pIntermediateResource);
+        LOG_INFO(L"    bufferData = 0x%p", bufferData);
+        LOG_INFO(L"    elementSize = %zu", elementSize);
+        LOG_INFO(L"    bufferSize = %llu", bufferSize);
+        LOG_INFO(L"    RowPitch = %llu", subresourceData.RowPitch);
+        LOG_INFO(L"    SlicePitch = %llu", subresourceData.SlicePitch);
+
+        // Log command list pointer
+        LOG_INFO(L"updateBufferResource() -> commandList = 0x%p", commandList.Get());
+
+        // Optionally, try to query its device
+        ComPtr<ID3D12Device> cmdListDevice;
+        if (SUCCEEDED(commandList->GetDevice(IID_PPV_ARGS(&cmdListDevice))))
+        {
+            LOG_INFO(L"updateBufferResource() -> commandList device = 0x%p", cmdListDevice.Get());
+        }
+
+        // Log the type of command list if available
+        D3D12_COMMAND_LIST_TYPE type = commandList->GetType();
+        switch (type)
+        {
+        case D3D12_COMMAND_LIST_TYPE_DIRECT: LOG_INFO(L"updateBufferResource() -> commandList type = DIRECT"); break;
+        case D3D12_COMMAND_LIST_TYPE_BUNDLE: LOG_INFO(L"updateBufferResource() -> commandList type = BUNDLE"); break;
+        case D3D12_COMMAND_LIST_TYPE_COMPUTE: LOG_INFO(L"updateBufferResource() -> commandList type = COMPUTE"); break;
+        case D3D12_COMMAND_LIST_TYPE_COPY: LOG_INFO(L"updateBufferResource() -> commandList type = COPY"); break;
+        default: LOG_INFO(L"updateBufferResource() -> commandList type = UNKNOWN"); break;
+        }
+
         LOG_INFO(L"updateBufferResource() -> about to call UpdateSubresources()");
-        UpdateSubresources(commandList.Get(),
-            *pDestinationResource, *pIntermediateResource,
-            0, 0, 1, &subresourceData);
-        LOG_INFO(L"updateBufferResource() -> UpdateSubresources finished");
+        UINT64 copied = UpdateSubresources(
+            commandList.Get(),
+            *pDestinationResource,
+            *pIntermediateResource,
+            0,
+            0,
+            1,
+            &subresourceData
+        );
+
+        if (copied == 0)
+        {
+            LOG_ERROR(L"updateBufferResource() -> UpdateSubresources FAILED, copied = 0");
+        }
+        else
+        {
+            LOG_INFO(L"updateBufferResource() -> UpdateSubresources finished, copied = %llu", copied);
+        }
+
+        // Optional: log GPU virtual addresses
+        if (*pDestinationResource)
+        {
+            LOG_INFO(L"    Destination GPU Virtual Address = 0x%llX", (*pDestinationResource)->GetGPUVirtualAddress());
+        }
+        
+        if (*pIntermediateResource)
+        {
+            LOG_INFO(L"    Intermediate GPU Virtual Address = 0x%llX", (*pIntermediateResource)->GetGPUVirtualAddress());
+        }
     }
 
     LOG_INFO(L"updateBufferResource() -> ends");
 }
 
 
+
 bool Application::loadContent()
 {
+    LOG_INFO(L"loadContent() -> begins");
+
     auto device = Engine::get().getDevice().getDevice();
+    LOG_INFO(L"loadContent() -> device acquired");
+
     auto queue = Engine::get().getCommandQueue(D3D12_COMMAND_LIST_TYPE_COPY);
+    LOG_INFO(L"loadContent() -> copy command queue acquired");
+
     auto list = queue->getCommandList();
+    LOG_INFO(L"loadContent() -> command list acquired");
 
     // Upload vertex buffer data.
+    LOG_INFO(L"loadContent() -> uploading vertex buffer");
     ComPtr<ID3D12Resource> intermediateVertexBuffer;
-
     updateBufferResource(
         list.Get(),
         &vertexBuffer,
         &intermediateVertexBuffer,
         _countof(vertices),
         sizeof(VertexPositionColor),
-        vertices);
+        vertices
+    );
+    LOG_INFO(L"loadContent() -> vertex buffer uploaded");
 
     // Create the vertex buffer view.
     vertexBufferView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
     vertexBufferView.SizeInBytes = sizeof(vertices);
     vertexBufferView.StrideInBytes = sizeof(VertexPositionColor);
+    LOG_INFO(L"loadContent() -> vertex buffer view created");
 
     // Upload index buffer data.
+    LOG_INFO(L"loadContent() -> uploading index buffer");
     ComPtr<ID3D12Resource> intermediateIndexBuffer;
-
     updateBufferResource(
         list.Get(),
         &indexBuffer,
         &intermediateIndexBuffer,
         _countof(indices),
         sizeof(WORD),
-        indices);
+        indices
+    );
+    LOG_INFO(L"loadContent() -> index buffer uploaded");
 
     // Create index buffer view.
     indexBufferView.BufferLocation = indexBuffer->GetGPUVirtualAddress();
     indexBufferView.Format = DXGI_FORMAT_R16_UINT;
     indexBufferView.SizeInBytes = sizeof(indices);
+    LOG_INFO(L"loadContent() -> index buffer view created");
 
+    // Create DSV heap.
     D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
     dsvHeapDesc.NumDescriptors = 1;
     dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
     dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
+    LOG_INFO(L"loadContent() -> creating DSV heap");
     throwFailed(
         device->CreateDescriptorHeap(
             &dsvHeapDesc,
             IID_PPV_ARGS(&dsvHeap)));
+    LOG_INFO(L"loadContent() -> DSV heap created");
 
-    // Load the vertex shader.
+    // Load shaders.
+    LOG_INFO(L"loadContent() -> loading vertex shader");
     ComPtr<ID3DBlob> vertexShaderBlob;
     throwFailed(D3DReadFileToBlob(L"assets/shaders/vertex.cso", &vertexShaderBlob));
+    LOG_INFO(L"loadContent() -> vertex shader loaded");
 
-    // Load the pixel shader.
+    LOG_INFO(L"loadContent() -> loading pixel shader");
     ComPtr<ID3DBlob> pixelShaderBlob;
     throwFailed(D3DReadFileToBlob(L"assets/shaders/pixel.cso", &pixelShaderBlob));
+    LOG_INFO(L"loadContent() -> pixel shader loaded");
 
+    // Input layout.
     D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
         {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
         {"COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
     };
+    LOG_INFO(L"loadContent() -> input layout defined");
 
-    // Create a root signature.
+    // Root signature.
+    LOG_INFO(L"loadContent() -> creating root signature");
     D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
     featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
     if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
@@ -216,7 +301,6 @@ bool Application::loadContent()
         featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
     }
 
-    // Allow input layout and deny unnecessary access to certain pipeline stages.
     D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
         D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
         D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
@@ -224,9 +308,6 @@ bool Application::loadContent()
         D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS |
         D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
 
-    // what the actual **** is this? :D
-
-    // A single 32-bit constant root parameter that is used by the vertex shader.
     CD3DX12_ROOT_PARAMETER1 rootParameters[1];
     rootParameters[0].InitAsConstants(sizeof(XMMATRIX) / 4, 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
 
@@ -238,7 +319,6 @@ bool Application::loadContent()
         nullptr,
         rootSignatureFlags);
 
-    // Serialize the root signature -> in production do this before runtime and at compile time
     ComPtr<ID3DBlob> rootSignatureBlob;
     ComPtr<ID3DBlob> errorBlob;
 
@@ -248,16 +328,18 @@ bool Application::loadContent()
             featureData.HighestVersion,
             &rootSignatureBlob,
             &errorBlob));
+    LOG_INFO(L"loadContent() -> root signature serialized");
 
-    // Create the root signature.
     throwFailed(
         device->CreateRootSignature(
             0,
             rootSignatureBlob->GetBufferPointer(),
             rootSignatureBlob->GetBufferSize(),
             IID_PPV_ARGS(&rootSignature)));
+    LOG_INFO(L"loadContent() -> root signature created");
 
-    // pso -> pipeline state object
+    // Pipeline state object (PSO).
+    LOG_INFO(L"loadContent() -> creating pipeline state object");
     struct PipelineStateStream
     {
         CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE pRootSignature;
@@ -288,18 +370,23 @@ bool Application::loadContent()
         device->CreatePipelineState(
             &pipelineStateStreamDesc,
             IID_PPV_ARGS(&pipelineState)));
+    LOG_INFO(L"loadContent() -> pipeline state object created");
 
+    LOG_INFO(L"loadContent() -> executing command list");
     auto fenceValue = queue->executeCommandList(list);
+    LOG_INFO(L"loadContent() -> waiting on fence");
     queue->fenceWait(fenceValue);
 
+    LOG_INFO(L"loadContent() -> resources uploaded and GPU sync complete");
     isResourceLoaded = true;
 
-    resizeDepthBuffer(
-        getWidth(),
-        getHeight());
+    resizeDepthBuffer(getWidth(), getHeight());
+    LOG_INFO(L"loadContent() -> depth buffer resized");
 
+    LOG_INFO(L"loadContent() -> finished");
     return true;
 }
+
 
 void Application::unloadContent()
 {

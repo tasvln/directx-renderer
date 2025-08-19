@@ -57,7 +57,8 @@ private:
         size_t numElements,
         size_t elementSize,
         const void* bufferData,
-        D3D12_RESOURCE_FLAGS flags);
+        D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE
+    );
 
     void resizeDepthBuffer(
         int width,

@@ -4,39 +4,42 @@
 
 class Device
 {
-public:
-    Device(bool useWarp);
-    ~Device() = default;
+    public:
+        Device(bool useWarp);
+        ~Device() = default;
 
-    void initialize(bool useWarp = false);
+        ComPtr<ID3D12Device2> GetDevice() const { 
+            return device; 
+        }
 
-    ComPtr<IDXGIAdapter4> selectAdapter(bool useWarp);
-    ComPtr<ID3D12Device2> createDevice(ComPtr<IDXGIAdapter4> deviceAdapter);
+        ComPtr<IDXGIAdapter4> GetAdapter() const { 
+            return adapter; 
+        }
 
-    // void enableDebugLayer();
-    void enableDeviceDebugLayer(ComPtr<ID3D12Device2> &debugDevice);
+        bool getSupportTearingState() const { 
+            return supportTearing; 
+        }
 
-    bool checkForTearingSupport();
+        D3D_FEATURE_LEVEL GetFeatureLevel() const { 
+            return featureLevel; 
+        }
 
-    // getters
-    ComPtr<ID3D12Device2> getDevice() const
-    {
-        return device;
-    }
+        ComPtr<ID3D12Device2> getDevice() const {
+            return device;
+        }
 
-    ComPtr<IDXGIAdapter4> getAdapter() const
-    {
-        return adapter;
-    }
+    private:
+        void enableDebugLayer();
+        ComPtr<IDXGIAdapter4> selectAdapter(bool useWarp);
+        ComPtr<ID3D12Device2> createDevice(ComPtr<IDXGIAdapter4> adapter);
+        bool checkForTearingSupport();
 
-    bool getSupportTearingState() const
-    {
-        return supportTearing;
-    }
+    private:
+        ComPtr<IDXGIAdapter4> adapter;
+        ComPtr<ID3D12Device2> device;
+        
+        bool supportTearing = false;
+        UINT dxgiFactoryFlags = 0;
 
-private:
-    ComPtr<IDXGIAdapter4> adapter;
-    ComPtr<ID3D12Device2> device;
-
-    bool supportTearing = false;
+        D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
 };
