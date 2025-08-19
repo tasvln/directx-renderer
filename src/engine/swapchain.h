@@ -1,14 +1,15 @@
 #pragma once
 
 #include "utils/pch.h"
+#include "descriptor_heap.h"
 
 class Swapchain {
     public:
         Swapchain(
             HWND hwnd, 
+            ComPtr<ID3D12Device2> device,
             ComPtr<ID3D12CommandQueue> commandQueue, 
-            uint32_t width, 
-            uint32_t height, 
+            UINT width, UINT height, 
             uint32_t bufferCount, 
             bool tearingSupport
         );
@@ -24,17 +25,7 @@ class Swapchain {
             bool tearingSupport
         );
 
-        ComPtr<ID3D12DescriptorHeap> createDescriptorHeap(
-            ComPtr<ID3D12Device2> device,
-            D3D12_DESCRIPTOR_HEAP_TYPE type, 
-            uint32_t numDescriptors
-        );
-
-        void updateRTVs(
-            ComPtr<ID3D12Device2> device,
-            ComPtr<IDXGISwapChain4> swapChain, 
-            ComPtr<ID3D12DescriptorHeap> descriptorHeap
-        );
+        void resize(UINT width, UINT height);
 
         ComPtr<IDXGISwapChain4> getSwapchain() const {
             return swapchain;
@@ -44,7 +35,23 @@ class Swapchain {
             return backBuffers[index];
         }
 
+        ComPtr<ID3D12Resource> getDepthBuffer() const { 
+            return depthBuffer; 
+        }
+
+    private:
+        void createRTVs(); // render target views -> yes that's what it means :)
+        void createDepthBuffer(UINT width, UINT height);
+
     private:
         ComPtr<IDXGISwapChain4> swapchain;
+        ComPtr<ID3D12Device2> device;
+        UINT bufferCount;
+
         ComPtr<ID3D12Resource> backBuffers[FRAMEBUFFERCOUNT];
+        ComPtr<ID3D12Resource> depthBuffer;
+
+        std::unique_ptr<DescriptorHeap> rtvHeap;
+        std::unique_ptr<DescriptorHeap> dsvHeap;
+        
 };

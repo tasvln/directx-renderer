@@ -8,11 +8,11 @@ class Device
         Device(bool useWarp);
         ~Device() = default;
 
-        ComPtr<ID3D12Device2> GetDevice() const { 
+        ComPtr<ID3D12Device2> getDevice() const { 
             return device; 
         }
 
-        ComPtr<IDXGIAdapter4> GetAdapter() const { 
+        ComPtr<IDXGIAdapter4> getAdapter() const { 
             return adapter; 
         }
 
@@ -20,12 +20,8 @@ class Device
             return supportTearing; 
         }
 
-        D3D_FEATURE_LEVEL GetFeatureLevel() const { 
+        D3D_FEATURE_LEVEL getFeatureLevel() const { 
             return featureLevel; 
-        }
-
-        ComPtr<ID3D12Device2> getDevice() const {
-            return device;
         }
 
     private:

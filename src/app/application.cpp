@@ -2,6 +2,7 @@
 #include "window.h"
 #include "engine/device.h"
 #include "engine/command_queue.h"
+#include "engine/swapchain.h"
 
 Application::Application(
     HINSTANCE hInstance, 
@@ -19,16 +20,30 @@ Application::~Application() {
 }
 
 void Application::init() {
-    LOG_INFO(L"Initializing Engine Classes");
+    LOG_INFO(L"Application -> Initializing...");
+
+    scissorRect = CD3DX12_RECT(
+        0, 
+        0, 
+        static_cast<LONG>(config.width), 
+        static_cast<LONG>(config.height)
+    );
+
+    viewport = CD3DX12_VIEWPORT(
+        0.0f, 
+        0.0f, 
+        static_cast<float>(config.width), 
+        static_cast<float>(config.height)
+    );
 
     device = std::make_unique<Device>(config.useWarp);
-    LOG_INFO(L"Engine->DirectX 12 device initialized.");
+    LOG_INFO(L"Application -> device initialized!");
 
     directCommandQueue = std::make_unique<CommandQueue>(
         device->getDevice(),
         D3D12_COMMAND_LIST_TYPE_DIRECT
     );
-    LOG_INFO(L"Engine->DirectX 12 directCommandQueue initialized.");
+    LOG_INFO(L"Application -> directCommandQueue initialized!");
 
     // computeCommandQueue = std::make_unique<CommandQueue>(
     //     device->getDevice(),
@@ -41,6 +56,21 @@ void Application::init() {
     //     D3D12_COMMAND_LIST_TYPE_COPY
     // );
     // LOG_INFO(L"Engine->DirectX 12 copyCommandQueue initialized.");
+
+    swapchain = std::make_unique<Swapchain>(
+        window->getHwnd(),
+        device->getDevice(),
+        directCommandQueue->getQueue(),
+        config.width,
+        config.height,
+        FRAMEBUFFERCOUNT,
+        device->getSupportTearingState()
+    );
+    LOG_INFO(L"Application -> swapchain initialized!");
+
+    currentBackBufferIndex = swapchain->getSwapchain()->GetCurrentBackBufferIndex();
+
+    LOG_INFO(L"Application Class initialized!");
 }
 
 int Application::run() {
@@ -67,6 +97,7 @@ void Application::onResize(UINT width, UINT height)
 {
     // LOG_INFO(L"Application resize: %dx%d", width, height);
     // Resize swapchain & depth buffer here
+    // swapchain->resize()
 }
 
 void Application::onUpdate()

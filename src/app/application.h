@@ -5,6 +5,7 @@
 class Window;
 class Device;
 class CommandQueue;
+class Swapchain;
 
 class Application
 {
@@ -28,6 +29,10 @@ class Application
         HWND hwnd = nullptr;
         WindowConfig config;
         RECT windowRect = {};
+        UINT currentBackBufferIndex;
+
+        D3D12_VIEWPORT viewport;
+        D3D12_RECT scissorRect;
 
         // unique pttrsssssss -> GPU resources
         std::unique_ptr<Window> window;
@@ -35,4 +40,5 @@ class Application
         std::unique_ptr<CommandQueue> directCommandQueue;
         // std::unique_ptr<CommandQueue> computeCommandQueue;
         // std::unique_ptr<CommandQueue> copyCommandQueue;
+        std::unique_ptr<Swapchain> swapchain;
 };
