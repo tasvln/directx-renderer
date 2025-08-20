@@ -91,8 +91,8 @@ struct WindowConfig {
 
 struct VertexStruct
 {
-    float position[3];
-    float color[3];
+    XMFLOAT3 Position;
+    XMFLOAT3 Color;
     // float texcoord[2];
 };
 

@@ -11,7 +11,6 @@ Mesh::Mesh(
         vertices
     );
     
-
     index = std::make_unique<IndexBuffer>(
         device,
         indices

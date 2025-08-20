@@ -47,6 +47,9 @@ target_link_libraries(
 # Define UNICODE
 target_compile_definitions(DIRECTX3D PRIVATE UNICODE _UNICODE)
 
+target_compile_options(DIRECTX3D PRIVATE /FS)
+
+
 # (uses WinMain instead of main)
 set_target_properties(DIRECTX3D PROPERTIES
     WIN32_EXECUTABLE TRUE

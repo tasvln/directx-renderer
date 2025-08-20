@@ -1,30 +1,25 @@
-struct VertexPositionColor {
+struct VertexStruct {
     float3 position: POSITION;
     float3 color: COLOR;
 };
 
-struct ModelViewProjection {
-    // 4x4 matrix
-    matrix mvp;
-};
-
 struct VertexShaderOutput {
-    float4 color: COLOR;
-    float4 position: SV_POSITION; // required by rasterizer
+    float4 position : SV_POSITION; // -> Required by rasterizer
+    float4 color    : COLOR;
 };
 
-// MVP constant buffer
-ConstantBuffer<ModelViewProjection> ModelViewProjectionCB : register(b0);
+// Constant buffer for MVP
+cbuffer ModelViewProjectionCB : register(b0)
+{
+    matrix mvp;
+}
 
-VertexShaderOutput main(VertexPositionColor inVpc) {
-    VertexShaderOutput vsOut;
+VertexShaderOutput vsmain(VertexStruct input) {
+    VertexShaderOutput output;
 
-    vsOut.position = mul(
-        ModelViewProjectionCB.mvp,
-        float4(inVpc.position, 1.0f)
-    );
+    output.position = mul(float4(input.position, 1.0f), mvp);
 
-    vsOut.color = float4(inVpc.color, 1.0f);
+    output.color = float4(input.color, 1.0f);
 
-    return vsOut;
+    return output;
 }

@@ -7,6 +7,8 @@ class Device;
 class CommandQueue;
 class Swapchain;
 class Mesh;
+class ConstantBuffer;
+class Pipeline;
 
 class Application
 {
@@ -43,4 +45,6 @@ class Application
         // std::unique_ptr<CommandQueue> copyCommandQueue;
         std::unique_ptr<Swapchain> swapchain;
         std::unique_ptr<Mesh> mesh;
+        std::unique_ptr<ConstantBuffer> constantBuffer1;
+        std::unique_ptr<Pipeline> pipeline1;
 };
