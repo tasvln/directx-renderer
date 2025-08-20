@@ -96,6 +96,11 @@ struct VertexStruct
     // float texcoord[2];
 };
 
+struct alignas(256) ConstantMVP
+{
+    DirectX::XMMATRIX mvp;
+};
+
 inline void throwFailed(HRESULT hr) {
     if (FAILED(hr)) {
         LOG_ERROR(L"throwFailed: HRESULT = 0x%08X", hr);

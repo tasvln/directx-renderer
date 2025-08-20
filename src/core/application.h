@@ -9,6 +9,7 @@ class Swapchain;
 class Mesh;
 class ConstantBuffer;
 class Pipeline;
+class Camera;
 
 class Application
 {
@@ -47,4 +48,5 @@ class Application
         std::unique_ptr<Mesh> mesh;
         std::unique_ptr<ConstantBuffer> constantBuffer1;
         std::unique_ptr<Pipeline> pipeline1;
+        std::unique_ptr<Camera> camera1;
 };

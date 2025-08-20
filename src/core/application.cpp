@@ -8,6 +8,7 @@
 #include "engine/buffer/constant.h"
 #include "engine/shader.h"
 #include "engine/pipeline.h"
+#include "engine/scene/camera.h"
 
 Application::Application(
     HINSTANCE hInstance, 
@@ -108,13 +109,24 @@ void Application::init() {
     );
     LOG_INFO(L"Mesh Resource initialized!");
 
-    UINT constantBuffer1Size = 256;
-
     constantBuffer1 = std::make_unique<ConstantBuffer>(
         device->getDevice(),
-        constantBuffer1Size
+        static_cast<UINT>(sizeof(ConstantMVP))
     );
     LOG_INFO(L"ConstantBuffer1 Resource initialized!");
+
+    camera1 = std::make_unique<Camera>(
+        45.0f,
+        static_cast<float>(config.width) / static_cast<float>(config.height),
+        0.1f,
+        100.0f
+    );
+    LOG_INFO(L"Camera initialized!");
+
+    XMMATRIX view = camera1->getViewMatrix();
+    XMMATRIX proj = camera1->getProjectionMatrix();
+    LOG_INFO(L"Camera View matrix[0][0]: %f", view.r[0].m128_f32[0]);
+    LOG_INFO(L"Camera Projection matrix[0][0]: %f", proj.r[0].m128_f32[0]);
 
     // pipeline
     // Root parameter for CBV
