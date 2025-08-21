@@ -37,11 +37,11 @@ class CommandQueue {
         bool isFenceComplete(UINT64 value);
 
         // getters
-        ComPtr<ID3D12CommandQueue> getQueue() const {
+        ComPtr<ID3D12CommandQueue> getCommandQueue() const {
             return queue;
         }
 
-        ComPtr<ID3D12CommandAllocator> getAllocator() const {
+        ComPtr<ID3D12CommandAllocator> getCommandAllocator() const {
             return allocator;
         }  
 

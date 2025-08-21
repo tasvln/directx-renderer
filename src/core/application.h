@@ -11,6 +11,9 @@ class ConstantBuffer;
 class Pipeline;
 class Camera;
 
+class UpdateEventArgs;
+class RenderEventArgs;
+
 class Application
 {
     public:
@@ -23,8 +26,15 @@ class Application
         void onResize(UINT width, UINT height);
 
         // main functions for rendering
-        void onUpdate();
-        void onRender();
+        void onUpdate(UpdateEventArgs& args);
+        void onRender(RenderEventArgs& args);
+
+        void transitionResource(
+            ComPtr<ID3D12GraphicsCommandList2> commandList,
+            ComPtr<ID3D12Resource> resource,
+            D3D12_RESOURCE_STATES beforeState,
+            D3D12_RESOURCE_STATES afterState
+        );
 
     private:
         void init();
@@ -33,7 +43,9 @@ class Application
         HWND hwnd = nullptr;
         WindowConfig config;
         RECT windowRect = {};
+
         UINT currentBackBufferIndex;
+        uint64_t fenceValues[FRAMEBUFFERCOUNT] {};
 
         D3D12_VIEWPORT viewport;
         D3D12_RECT scissorRect;

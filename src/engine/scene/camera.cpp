@@ -21,11 +21,17 @@ Camera::Camera(
     );
     LOG_INFO(L"Projection matrix created. FOV: %.2f, Aspect: %.2f, NearZ: %.2f, FarZ: %.2f", fov, aspect, nearZ, farZ);
 
-    // Optional: Initialize view matrix immediately
-    view = XMMatrixLookAtLH(
-        XMLoadFloat3(&position),
-        XMLoadFloat3(&target),
-        XMVectorSet(0, 1, 0, 0)
-    );
-    LOG_INFO(L"View matrix created from position and target");
+    updateViewMatrix();
+}
+
+void Camera::updateViewMatrix() {
+    XMVECTOR pos = XMLoadFloat3(&position);
+    XMVECTOR tgt = XMLoadFloat3(&target);
+    XMVECTOR up  = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+    view = XMMatrixLookAtLH(pos, tgt, up);
+}
+
+void Camera::update(float delta) {
+    updateViewMatrix();
 }

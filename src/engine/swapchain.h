@@ -39,6 +39,14 @@ class Swapchain {
             return depthBuffer; 
         }
 
+        DescriptorHeap* getRTVHeap() const {
+            return rtvHeap.get();
+        }
+        
+        DescriptorHeap* getDSVHeap() const {
+            return dsvHeap.get();
+        }
+
     private:
         void createRTVs(); // render target views -> yes that's what it means :)
         void createDepthBuffer(UINT width, UINT height);

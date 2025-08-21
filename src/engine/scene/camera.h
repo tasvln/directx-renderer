@@ -15,10 +15,12 @@ public:
 
     void setPosition(const XMFLOAT3& pos) { 
         position = pos; 
+        updateViewMatrix();
     }
 
     void setTarget(const XMFLOAT3& tgt) { 
         target = tgt; 
+        updateViewMatrix();
     }
 
     XMMATRIX getViewMatrix() const { 
@@ -28,6 +30,15 @@ public:
     XMMATRIX getProjectionMatrix() const { 
         return projection; 
     }
+
+    XMMATRIX getViewProjectionMatrix() const {
+        return XMMatrixMultiply(view, projection);
+    }
+
+    void update(float delta);
+
+private:
+    void updateViewMatrix();
 
 private:
     XMFLOAT3 position;

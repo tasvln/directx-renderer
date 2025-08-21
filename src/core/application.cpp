@@ -10,6 +10,9 @@
 #include "engine/pipeline.h"
 #include "engine/scene/camera.h"
 
+#include "utils/events.h"
+#include "utils/frame_timer.h"
+
 Application::Application(
     HINSTANCE hInstance, 
     WindowConfig &config
@@ -66,7 +69,7 @@ void Application::init() {
     swapchain = std::make_unique<Swapchain>(
         window->getHwnd(),
         device->getDevice(),
-        directCommandQueue->getQueue(),
+        directCommandQueue->getCommandQueue(),
         config.width,
         config.height,
         FRAMEBUFFERCOUNT,
@@ -109,6 +112,7 @@ void Application::init() {
     );
     LOG_INFO(L"Mesh Resource initialized!");
 
+    // mvpBuffer?
     constantBuffer1 = std::make_unique<ConstantBuffer>(
         device->getDevice(),
         static_cast<UINT>(sizeof(ConstantMVP))
@@ -175,6 +179,7 @@ void Application::init() {
 
 int Application::run() {
     MSG msg = {};
+    Timer timer;
 
     while (msg.message != WM_QUIT)
     {
@@ -183,14 +188,182 @@ int Application::run() {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-        // else
-        // {
-        //     onUpdate();
-        //     onRender();
-        // }
+        else
+        {
+            timer.tick();
+
+            UpdateEventArgs updateArgs(
+                timer.getDeltaSeconds(), 
+                timer.getTotalSeconds()
+            );
+            onUpdate(updateArgs);
+
+            RenderEventArgs renderArgs(
+                timer.getDeltaSeconds(), 
+                timer.getTotalSeconds()
+            );
+            onRender(renderArgs);
+            
+            std::wstring title = L"DirectX12 App - " + timer.getFPSString();
+            if (window) {
+                SetWindowTextW(window->getHwnd(), title.c_str());
+            } else {
+                LOG_ERROR(L"Window is null!");
+            }
+        }
     }
 
     return static_cast<int>(msg.wParam);
+}
+
+void Application::onUpdate(UpdateEventArgs& args)
+{
+    // LOG_INFO(L"[onUpdate] Δt=%.4f sec | total=%.2f sec", args.elapsedTime, args.totalTime);
+
+    camera1->update(static_cast<float>(args.totalTime));
+
+    // Build MVP
+    XMMATRIX model = XMMatrixIdentity();
+    XMMATRIX view = camera1->getViewMatrix();
+    XMMATRIX projection = camera1->getProjectionMatrix();
+
+    ConstantMVP mvpData;
+    mvpData.mvp = XMMatrixTranspose(model * view * projection);
+
+    // Upload to GPU
+    constantBuffer1->update(&mvpData, sizeof(mvpData));
+}
+
+void Application::onRender(RenderEventArgs& args)
+{
+    // LOG_INFO(L"[onRender] Δt=%.4f sec | total=%.2f sec", args.elapsedTime, args.totalTime);
+
+    auto commandAllocator = directCommandQueue->getCommandAllocator();
+    auto commandList = directCommandQueue->getCommandList();
+    auto commandQueue = directCommandQueue->getCommandQueue();
+
+    auto pipelineState = pipeline1->getPipelineState();
+    auto rootSignature = pipeline1->getRootSignature();
+
+    auto rtvHeap = swapchain->getRTVHeap();
+    auto dsvHeap = swapchain->getDSVHeap();
+
+    auto vertex = mesh->getVertex();
+    auto index = mesh->getIndex();
+
+    auto vsync = device->getSupportTearingState();
+
+    // Reset the queue -> allocator and list
+    throwFailed(
+        commandAllocator->Reset()
+    );
+    throwFailed(
+        commandList->Reset(
+            commandAllocator.Get(), 
+            pipelineState.Get()
+        )
+    );
+
+    // Set root signature
+    commandList->SetGraphicsRootSignature(
+        rootSignature.Get()
+    );
+
+    // Update constant buffer (MVP)
+    XMMATRIX model = XMMatrixIdentity();
+    XMMATRIX view = camera1->getViewMatrix();
+    XMMATRIX projection = camera1->getProjectionMatrix();
+
+    ConstantMVP mvpData;
+    mvpData.mvp = XMMatrixTranspose(model * view * projection);
+    constantBuffer1->update(&mvpData, sizeof(mvpData));
+
+    commandList->SetGraphicsRootConstantBufferView(
+        0, 
+        constantBuffer1->getGPUAddress()
+    );
+
+    // Set viewport and scissor
+    commandList->RSSetViewports(1, &viewport);
+    commandList->RSSetScissorRects(1, &scissorRect);
+
+    // Indicate render target state
+    auto backBuffer = swapchain->getBackBuffer(currentBackBufferIndex);
+    transitionResource(
+        commandList,
+        backBuffer.Get(),
+        D3D12_RESOURCE_STATE_PRESENT,
+        D3D12_RESOURCE_STATE_RENDER_TARGET
+    );
+
+    // Set RTV and DSV
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+        rtvHeap->getHeap()->GetCPUDescriptorHandleForHeapStart(),
+        currentBackBufferIndex, 
+        rtvHeap->getDescriptorSize()
+    );
+
+    CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
+        dsvHeap->getHeap()->GetCPUDescriptorHandleForHeapStart()
+    );
+
+    commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+    // Clear render target and depth buffer
+    const float clearColor[] = { 0.2f, 0.2f, 0.4f, 1.0f };
+    commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+    commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+    /* Drawing the Triangles -> or where the main drawing happens especially with rendering models */
+    // Set primitive topology
+    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // Bind vertex/index buffers
+    commandList->IASetVertexBuffers(0, 1, &vertex->getView());
+    commandList->IASetIndexBuffer(&index->getView());
+
+    // Draw
+    commandList->DrawIndexedInstanced(index->getCount(), 1, 0, 0, 0);
+
+    // Present
+    transitionResource(
+        commandList,
+        backBuffer.Get(),
+        D3D12_RESOURCE_STATE_RENDER_TARGET,
+        D3D12_RESOURCE_STATE_PRESENT
+    );
+
+    fenceValues[currentBackBufferIndex] = directCommandQueue->executeCommandList(commandList);
+
+    INT syncInterval = vsync ? 1 : 0;
+    UINT presentFlags = !vsync ? DXGI_PRESENT_ALLOW_TEARING : 0;
+
+    throwFailed(
+        swapchain->getSwapchain()->Present(
+            syncInterval,
+            presentFlags
+        )
+    );
+
+    currentBackBufferIndex = swapchain->getSwapchain()->GetCurrentBackBufferIndex();
+
+    // the CPU immediately waits for the GPU to finish this frame before moving on
+    directCommandQueue->fenceWait(fenceValues[currentBackBufferIndex]);
+}
+
+void Application::transitionResource(
+    ComPtr<ID3D12GraphicsCommandList2> commandList,
+    ComPtr<ID3D12Resource> resource,
+    D3D12_RESOURCE_STATES beforeState,
+    D3D12_RESOURCE_STATES afterState
+) {
+    CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+        resource.Get(),
+        beforeState,
+        afterState
+    );
+
+    commandList->ResourceBarrier(1, &barrier);
 }
 
 void Application::onResize(UINT width, UINT height)
@@ -198,14 +371,4 @@ void Application::onResize(UINT width, UINT height)
     // LOG_INFO(L"Application resize: %dx%d", width, height);
     // Resize swapchain & depth buffer here
     // swapchain->resize()
-}
-
-void Application::onUpdate()
-{
-    // Game/update logic
-}
-
-void Application::onRender()
-{
-    // Issue rendering commands
 }

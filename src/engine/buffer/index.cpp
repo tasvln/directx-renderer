@@ -4,7 +4,8 @@ IndexBuffer::IndexBuffer(
     ComPtr<ID3D12Device2> device, 
     const std::vector<uint32_t>& indices
 ) {
-    sizeInBytes = static_cast<UINT>(sizeof(uint32_t) * indices.size());
+    count = indices.size();
+    sizeInBytes = static_cast<UINT>(sizeof(uint32_t) * count);
 
     CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE_UPLOAD);
     CD3DX12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(sizeInBytes);
@@ -28,6 +29,6 @@ IndexBuffer::IndexBuffer(
     bufferView.Format = DXGI_FORMAT_R32_UINT;
     bufferView.SizeInBytes = sizeInBytes;
 
-    LOG_INFO(L" -> Index buffer created with %d indices", indices.size());
+    LOG_INFO(L" -> Index buffer created with %d indices", count);
 }
 
