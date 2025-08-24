@@ -1,37 +1,13 @@
 #include "shader.h"
 
-Shader::Shader(
-    const std::wstring& filename, 
-    const std::string& entryPoint, 
-    const std::string& target
-) {
-    UINT compileFlags = D3DCOMPILE_ENABLE_STRICTNESS;
-
-#if defined(_DEBUG)
-    compileFlags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#endif
-
-    HRESULT hr = D3DCompileFromFile(
-        filename.c_str(),
-        nullptr, nullptr,
-        entryPoint.c_str(),
-        target.c_str(),
-        compileFlags,
-        0,
-        &bytecode,
-        &errorBlob
-    );
-
+Shader::Shader(const std::wstring& filename)
+{
+    HRESULT hr = D3DReadFileToBlob(filename.c_str(), &bytecode);
     if (FAILED(hr)) {
-        if (errorBlob) {
-            OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-            LOG_ERROR(L"Shader compilation error: %S", (char*)errorBlob->GetBufferPointer());
-        } else {
-            LOG_ERROR(L"Shader compilation failed without error blob.");
-        }
-        throwFailed(hr);
+        LOG_ERROR(L"Failed to load shader: %s", filename.c_str());
+        throw std::runtime_error("Failed to load shader");
     }
-
-    LOG_INFO(L"Shader compiled successfully: %s", filename.c_str());
+    LOG_INFO(L"Shader loaded: %s", filename.c_str());
 }
+
 

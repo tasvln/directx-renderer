@@ -13,6 +13,7 @@ class Camera;
 
 class UpdateEventArgs;
 class RenderEventArgs;
+class ResizeEventArgs;
 
 class Application
 {
@@ -23,7 +24,7 @@ class Application
         // running the application
         int run();
 
-        void onResize(UINT width, UINT height);
+        void onResize(ResizeEventArgs& args);
 
         // main functions for rendering
         void onUpdate(UpdateEventArgs& args);
@@ -38,6 +39,7 @@ class Application
 
     private:
         void init();
+        void cleanUp();
 
     private:
         HWND hwnd = nullptr;

@@ -1,7 +1,7 @@
 #include "command_queue.h"
 
 CommandQueue::CommandQueue(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type)
-    : device(device), type(type), fenceValue(0)
+    : device(device), type(type), fenceValue(0) 
 {
     LOG_INFO(L"Initializing CommandQueue of type %d", type);
 
@@ -17,7 +17,20 @@ CommandQueue::CommandQueue(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE
     LOG_INFO(L"Fence created with initial value %llu", fenceValue);
 
     fenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (!fenceEvent) {
+        LOG_ERROR(L"Failed to create fence event!");
+        throw std::runtime_error("Failed to create fence event");
+    }
+
     LOG_INFO(L"CommandQueue Initialized successfully");
+}
+
+CommandQueue::~CommandQueue() {
+    flush();
+    if (fenceEvent) {
+        CloseHandle(fenceEvent);
+        fenceEvent = nullptr;
+    }
 }
 
 ComPtr<ID3D12CommandAllocator> CommandQueue::createCommandAllocator() {
@@ -30,16 +43,15 @@ ComPtr<ID3D12CommandAllocator> CommandQueue::createCommandAllocator() {
 ComPtr<ID3D12GraphicsCommandList2> CommandQueue::createCommandList(ComPtr<ID3D12CommandAllocator> allocator) {
     ComPtr<ID3D12GraphicsCommandList2> list;
     throwFailed(device->CreateCommandList(0, type, allocator.Get(), nullptr, IID_PPV_ARGS(&list)));
-    throwFailed(list->Close());
-    LOG_INFO(L"Created new CommandList and closed it initially");
+    LOG_INFO(L"Created new CommandList (open)");
     return list;
 }
 
 ComPtr<ID3D12GraphicsCommandList2> CommandQueue::getCommandList() {
-    LOG_INFO(L"Getting a CommandList from pool");
-    ComPtr<ID3D12CommandAllocator> alloc;
-    ComPtr<ID3D12GraphicsCommandList2> cmdList;
+    LOG_INFO(L"Requesting CommandList");
 
+    // Acquire allocator
+    ComPtr<ID3D12CommandAllocator> alloc;
     if (!allocatorQueue.empty() && isFenceComplete(allocatorQueue.front().fenceValue)) {
         alloc = allocatorQueue.front().allocator;
         allocatorQueue.pop();
@@ -49,67 +61,71 @@ ComPtr<ID3D12GraphicsCommandList2> CommandQueue::getCommandList() {
         alloc = createCommandAllocator();
     }
 
+    // Acquire command list
+    ComPtr<ID3D12GraphicsCommandList2> cmdList;
     if (!listQueue.empty()) {
-        cmdList = listQueue.front();
+        ListEntry entry = listQueue.front();
         listQueue.pop();
+        cmdList = entry.list;
         throwFailed(cmdList->Reset(alloc.Get(), nullptr));
-        LOG_INFO(L"Reusing CommandList from pool");
+        LOG_INFO(L"Reusing CommandList from pool (reset)");
     } else {
         cmdList = createCommandList(alloc);
+        LOG_INFO(L"Created new CommandList (open)");
     }
 
-    throwFailed(cmdList->SetPrivateDataInterface(__uuidof(ID3D12CommandAllocator), alloc.Get()));
+    liveListAllocMap[cmdList.Get()] = alloc;
     return cmdList;
 }
 
 UINT64 CommandQueue::executeCommandList(ComPtr<ID3D12GraphicsCommandList2> cmdList) {
-    LOG_INFO(L"Executing CommandList");
     throwFailed(cmdList->Close());
 
-    ID3D12CommandAllocator* allocPtr;
-    UINT size = sizeof(allocPtr);
-    throwFailed(cmdList->GetPrivateData(__uuidof(ID3D12CommandAllocator), &size, &allocPtr));
+    // Retrieve allocator
+    auto it = liveListAllocMap.find(cmdList.Get());
+    ComPtr<ID3D12CommandAllocator> allocatorForList = nullptr;
+    if (it != liveListAllocMap.end()) {
+        allocatorForList = it->second;
+        liveListAllocMap.erase(it);
+    } else {
+        LOG_ERROR(L"Allocator not found for executed command list!");
+    }
 
+    // Execute
     ID3D12CommandList* lists[] = { cmdList.Get() };
     queue->ExecuteCommandLists(1, lists);
 
+    // Signal fence
     UINT64 val = signalFence();
-    allocatorQueue.emplace(AllocatorEntry{ val, allocPtr });
-    listQueue.push(cmdList);
+    allocatorQueue.push({ val, allocatorForList });
 
-    allocPtr->Release();
-    LOG_INFO(L"CommandList executed, fence signaled with value %llu", val);
+    // Return list to pool
+    listQueue.push({ cmdList, allocatorForList });
+
     return val;
-}
-
-bool CommandQueue::isFenceComplete(UINT64 value) {
-    bool complete = fence->GetCompletedValue() >= value;
-    LOG_INFO(L"Fence check: %llu complete? %d", value, complete);
-    return complete;
-}
-
-void CommandQueue::fenceWait(UINT64 value) {
-    LOG_INFO(L"Waiting for fence %llu", value);
-    if (!isFenceComplete(value)) {
-        throwFailed(fence->SetEventOnCompletion(value, fenceEvent));
-        WaitForSingleObject(fenceEvent, DWORD_MAX);
-        LOG_INFO(L"Fence %llu completed", value);
-    }
-}
-
-void CommandQueue::fenceFlush(UINT64 value) {
-    LOG_INFO(L"Flushing fence %llu", value);
-    fenceWait(value);
 }
 
 UINT64 CommandQueue::signalFence() {
     fenceValue++;
-    LOG_INFO(L"Signaling fenceValue: %llu", fenceValue);
     throwFailed(queue->Signal(fence.Get(), fenceValue));
     return fenceValue;
 }
 
+bool CommandQueue::isFenceComplete(UINT64 value) {
+    return fence->GetCompletedValue() >= value;
+}
+
+void CommandQueue::fenceWait(UINT64 value) {
+    if (!isFenceComplete(value)) {
+        throwFailed(fence->SetEventOnCompletion(value, fenceEvent));
+        WaitForSingleObject(fenceEvent, DWORD_MAX);
+    }
+}
+
+void CommandQueue::fenceFlush(UINT64 value) {
+    fenceWait(value);
+}
+
 void CommandQueue::flush() {
-    LOG_INFO(L"Flushing CommandQueue");
     fenceWait(signalFence());
 }

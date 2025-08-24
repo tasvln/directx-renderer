@@ -1,11 +1,11 @@
-struct VertexStruct {
-    float3 position: POSITION;
-    float3 color: COLOR;
+struct VertexInputType {
+    float4 position: POSITION;
+    float4 color: COLOR0;
 };
 
-struct VertexShaderOutput {
+struct PixelInputType {
     float4 position : SV_POSITION; // -> Required by rasterizer
-    float4 color    : COLOR;
+    float4 color    : COLOR0;
 };
 
 // Constant buffer for MVP
@@ -14,12 +14,12 @@ cbuffer ModelViewProjectionCB : register(b0)
     matrix mvp;
 }
 
-VertexShaderOutput vsmain(VertexStruct input) {
-    VertexShaderOutput output;
+PixelInputType vsmain(VertexInputType input) {
+    PixelInputType output;
 
-    output.position = mul(float4(input.position, 1.0f), mvp);
+    output.position = mul(input.position, mvp);
 
-    output.color = float4(input.color, 1.0f);
+    output.color = input.color;
 
     return output;
 }

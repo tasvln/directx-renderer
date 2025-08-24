@@ -23,6 +23,13 @@ public:
         updateViewMatrix();
     }
 
+    void setProjection(
+        float fov, 
+        float aspect, 
+        float nearZ, 
+        float farZ
+    );
+
     XMMATRIX getViewMatrix() const { 
         return view; 
     }

@@ -4,7 +4,7 @@ VertexBuffer::VertexBuffer(
     ComPtr<ID3D12Device2> device, 
     const std::vector<VertexStruct>& vertices
 ) {
-    count = vertices.size();
+    count = static_cast<UINT>(vertices.size());
     sizeInBytes = static_cast<UINT>(sizeof(VertexStruct) * count);
 
     CD3DX12_HEAP_PROPERTIES heapProps(D3D12_HEAP_TYPE_UPLOAD);

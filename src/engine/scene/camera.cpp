@@ -24,6 +24,22 @@ Camera::Camera(
     updateViewMatrix();
 }
 
+void Camera::setProjection(
+    float fov, 
+    float aspect, 
+    float nearZ, 
+    float farZ
+) {
+    projection = XMMatrixPerspectiveFovLH(
+        fov,
+        aspect,
+        nearZ,
+        farZ
+    );
+
+    LOG_INFO(L"Projection matrix updated. FOV: %.2f, Aspect: %.2f, NearZ: %.2f, FarZ: %.2f", fov, aspect, nearZ, farZ);
+}
+
 void Camera::updateViewMatrix() {
     XMVECTOR pos = XMLoadFloat3(&position);
     XMVECTOR tgt = XMLoadFloat3(&target);

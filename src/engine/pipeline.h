@@ -13,7 +13,7 @@ class Pipeline {
             const std::vector<D3D12_ROOT_PARAMETER>& rootParams = {},
             const std::vector<D3D12_STATIC_SAMPLER_DESC>& samplers = {},
             DXGI_FORMAT rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM,
-            DXGI_FORMAT dsvFormat = DXGI_FORMAT_D32_FLOAT
+            DXGI_FORMAT dsvFormat = DXGI_FORMAT_D24_UNORM_S8_UINT
         );
 
         ~Pipeline() = default;

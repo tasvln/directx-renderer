@@ -1,5 +1,6 @@
 #include "window.h"
 #include "application.h"
+#include "utils/events.h"
 
 Window::Window(
     HINSTANCE hInstance, 
@@ -118,7 +119,9 @@ LRESULT Window::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
             {
                 UINT width = LOWORD(lParam);
                 UINT height = HIWORD(lParam);
-                app->onResize(width, height);
+
+                ResizeEventArgs resizeArgs(width, height);
+                app->onResize(resizeArgs);
             }
             break;
 

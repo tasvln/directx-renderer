@@ -9,7 +9,8 @@ Swapchain::Swapchain(
     bool tearingSupport
 ) :
     device(device),
-    bufferCount(bufferCount)
+    bufferCount(bufferCount),
+    tearingSupport(tearingSupport)
 {
     swapchain = createSwapchain(
         hwnd,
@@ -92,12 +93,12 @@ void Swapchain::createDepthBuffer(UINT width, UINT height)
     depthDesc.Height = height;
     depthDesc.DepthOrArraySize = 1;
     depthDesc.MipLevels = 1;
-    depthDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     depthDesc.SampleDesc.Count = 1;
     depthDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
     D3D12_CLEAR_VALUE clearValue = {};
-    clearValue.Format = DXGI_FORMAT_D32_FLOAT;
+    clearValue.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     clearValue.DepthStencil.Depth = 1.0f;
     clearValue.DepthStencil.Stencil = 0;
 
@@ -113,7 +114,7 @@ void Swapchain::createDepthBuffer(UINT width, UINT height)
     ));
     
     D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
-    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
     dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
     dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 
@@ -126,7 +127,8 @@ void Swapchain::createRTVs() {
     auto rtvSize = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
  
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap->getHeap()->GetCPUDescriptorHandleForHeapStart());
- 
+
+    backBuffers.resize(bufferCount);
     for (UINT i = 0; i < bufferCount; ++i) {
         throwFailed(swapchain->GetBuffer(i, IID_PPV_ARGS(&backBuffers[i])));
         device->CreateRenderTargetView(backBuffers[i].Get(), nullptr, rtvHandle);
@@ -136,12 +138,24 @@ void Swapchain::createRTVs() {
 
 void Swapchain::resize(UINT width, UINT height)
 {
-    // TODO: handle resizing buffers + depth buffer recreation
-    // for (auto& bb : backBuffers) bb.Reset();
-    // depthBuffer.Reset();
+    for (auto& bb : backBuffers) 
+        bb.Reset();
+    depthBuffer.Reset();
 
-    // throwFailed(swapchain->ResizeBuffers(bufferCount, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, swapchainFlags));
+    // Resize swapchain buffers
+    UINT swapchainFlags = tearingSupport ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
-    // createRTVs();
-    // createDepthBuffer(width, height);
+    throwFailed(swapchain->ResizeBuffers(
+        bufferCount,
+        width,
+        height,
+        DXGI_FORMAT_R8G8B8A8_UNORM,
+        swapchainFlags
+    ));
+
+    // Recreate RTVs + depth buffer
+    createRTVs();
+    createDepthBuffer(width, height);
+
+    LOG_INFO(L"Swapchain -> Resize complete");
 }

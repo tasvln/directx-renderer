@@ -1,4 +1,5 @@
 #include "pipeline.h"
+#include <comdef.h>
 
 Pipeline::Pipeline(
     ComPtr<ID3D12Device2> device,
@@ -12,6 +13,13 @@ Pipeline::Pipeline(
 ) {
     LOG_INFO(L"Starting Pipeline creation...");
 
+    if (!vertexShader.getBytecode() || !pixelShader.getBytecode()) {
+        LOG_ERROR(L"Shader bytecode is null!");
+        return;
+    }
+
+    LOG_INFO(L"RootParams size = %d", static_cast<UINT>(rootParams.size()));
+
     // Root signature
     D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
     rootDesc.NumParameters = static_cast<UINT>(rootParams.size());
@@ -19,6 +27,7 @@ Pipeline::Pipeline(
     rootDesc.NumStaticSamplers = static_cast<UINT>(samplers.size());
     rootDesc.pStaticSamplers = samplers.empty() ? nullptr : samplers.data();
     rootDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
 
     ComPtr<ID3DBlob> serializedRootSig;
     ComPtr<ID3DBlob> errorBlob;
@@ -29,6 +38,7 @@ Pipeline::Pipeline(
         &serializedRootSig,
         &errorBlob
     );
+
     if (FAILED(hr)) {
         if (errorBlob) {
             OutputDebugStringA((char*)errorBlob->GetBufferPointer());
@@ -63,24 +73,27 @@ Pipeline::Pipeline(
     LOG_INFO(L"PSO -> RootSignature assigned");
 
     psoDesc.VS = { 
-        vertexShader.getBytecode()->GetBufferPointer(), 
-        vertexShader.getBytecode()->GetBufferSize() 
+        vertexShader.getBytecode()->GetBufferPointer(),
+        vertexShader.getBytecode()->GetBufferSize()
     };
     LOG_INFO(L"PSO -> Vertex shader bytecode set, size: %llu bytes", vertexShader.getBytecode()->GetBufferSize());
 
     psoDesc.PS = { 
-        pixelShader.getBytecode()->GetBufferPointer(), 
-        pixelShader.getBytecode()->GetBufferSize() 
+        pixelShader.getBytecode()->GetBufferPointer(),
+        pixelShader.getBytecode()->GetBufferSize()
     };
     LOG_INFO(L"PSO -> Pixel shader bytecode set, size: %llu bytes", pixelShader.getBytecode()->GetBufferSize());
 
     psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    // psoDesc.RasterizerState = rasterizerDesc;
     LOG_INFO(L"PSO -> RasterizerState set to default");
 
     psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    // psoDesc.BlendState = blendDesc;
     LOG_INFO(L"PSO -> BlendState set to default");
 
     psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+    // psoDesc.DepthStencilState = depthStencilDesc;
     LOG_INFO(L"PSO -> DepthStencilState set to default");
 
     psoDesc.SampleMask = UINT_MAX;
@@ -99,13 +112,21 @@ Pipeline::Pipeline(
     psoDesc.SampleDesc.Count = 1;
     LOG_INFO(L"PSO -> SampleDesc.Count set to %d", psoDesc.SampleDesc.Count);
 
+    LOG_INFO(L"Creating PSO with RTVFormat=%d, DSVFormat=%d, NumRenderTargets=%d", psoDesc.RTVFormats[0], psoDesc.DSVFormat, psoDesc.NumRenderTargets);
+    LOG_INFO(L"RootSignature=%p, VS=%p, PS=%p", psoDesc.pRootSignature, psoDesc.VS.pShaderBytecode, psoDesc.PS.pShaderBytecode);
+
     hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipelineState));
     if (FAILED(hr)) {
-        LOG_ERROR(L"Failed to create PSO. HRESULT: 0x%08X", hr);
+        LOG_ERROR(L"CreateGraphicsPipelineState failed: HRESULT = 0x%08X", hr);
+        std::cerr << "CreateGraphicsPipelineState failed. HRESULT = 0x"
+                << std::hex << hr << std::dec << std::endl;
+
+        // Dump D3D12 debug messages (critical - will show the exact reason)
+        // dumpD3D12DebugMessages(device);
+        LOG_D3D12_MESSAGES(device);
+
         throwFailed(hr);
-    } else {
-        LOG_INFO(L"Graphics pipeline state created successfully");
     }
 
-    LOG_INFO(L"Pipeline creation finished");
+    LOG_INFO(L"Pipeline creation successful!");
 }

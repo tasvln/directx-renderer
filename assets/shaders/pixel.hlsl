@@ -1,7 +1,8 @@
-struct PixelInput {
-    float4 color: COLOR;
+struct PixelInputType {
+    float4 position : SV_POSITION;
+    float4 color    : COLOR0;
 };
 
-float4 psmain(PixelInput input) : SV_TARGET {
+float4 psmain(PixelInputType input) : SV_TARGET {
     return input.color;
 };

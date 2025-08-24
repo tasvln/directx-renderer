@@ -2,6 +2,7 @@
 
 Device::Device(bool useWarp)
 {
+
     enableDebugLayer();
     
     supportTearing = checkForTearingSupport();
@@ -21,11 +22,12 @@ void Device::enableDebugLayer()
     {
         debugController->EnableDebugLayer();
         LOG_INFO(L"D3D12 Debug Layer enabled.");
+        std::cout << "D3D12 Debug Layer enabled.\n";
     }
     else
     {
         LOG_ERROR(L"Failed to enable D3D12 Debug Layer!");
-        OutputDebugStringA("WARNING: Direct3D Debug Device is not available\n");
+        std::cerr << "WARNING: Direct3D Debug Device is not available\n";
     }
 
     dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
@@ -44,6 +46,8 @@ void Device::enableDebugLayer()
         filter.DenyList.NumIDs = _countof(hide);
         filter.DenyList.pIDList = hide;
         dxgiInfoQueue->AddStorageFilterEntries(DXGI_DEBUG_DXGI, &filter);
+
+        std::cout << "DXGI InfoQueue filter configured.\n";
     }
 #endif
 }
@@ -126,8 +130,8 @@ ComPtr<ID3D12Device2> Device::createDevice(ComPtr<IDXGIAdapter4> deviceAdapter)
     ComPtr<ID3D12InfoQueue> d3dInfoQueue;
     if (SUCCEEDED(id3d12device.As(&d3dInfoQueue)))
     {
-        d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-        d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+        d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, FALSE);
+        d3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, FALSE);
 
         D3D12_MESSAGE_ID hide[] = {
             D3D12_MESSAGE_ID_MAP_INVALID_NULLRANGE,

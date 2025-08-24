@@ -71,6 +71,7 @@
 #define LOG_WARNING(fmt, ...) Logger::instance().log(LogType::Warning, __FILE__, __FUNCTION__, __LINE__, fmt, __VA_ARGS__)
 #define LOG_ERROR(fmt, ...)   Logger::instance().log(LogType::Error,   __FILE__, __FUNCTION__, __LINE__, fmt, __VA_ARGS__)
 #define LOG_DEBUG(fmt, ...)   Logger::instance().log(LogType::Debug,   __FILE__, __FUNCTION__, __LINE__, fmt, __VA_ARGS__)
+#define LOG_D3D12_MESSAGES(device) Logger::instance().dumpD3D12DebugMessages(device)
 
 static const UINT FRAMEBUFFERCOUNT = 3;
 
@@ -89,11 +90,9 @@ struct WindowConfig {
     bool resizable = true;
 };
 
-struct VertexStruct
-{
-    XMFLOAT3 Position;
-    XMFLOAT3 Color;
-    // float texcoord[2];
+struct alignas(16) VertexStruct {
+    DirectX::XMFLOAT4 position;
+    DirectX::XMFLOAT4 color;
 };
 
 struct alignas(256) ConstantMVP
@@ -107,4 +106,3 @@ inline void throwFailed(HRESULT hr) {
         throw std::runtime_error("HRESULT failed");
     }
 }
-

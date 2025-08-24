@@ -25,7 +25,7 @@ Application::Application(
 }
 
 Application::~Application() {
-
+    cleanUp();
 }
 
 void Application::init() {
@@ -83,14 +83,14 @@ void Application::init() {
     LOG_INFO(L"-- Resources --");
 
     std::vector<VertexStruct> vertices = {
-        {XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f)}, // 0
-        {XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f)},  // 1
-        {XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f)},   // 2
-        {XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT3(1.0f, 0.0f, 0.0f)},  // 3
-        {XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 1.0f)},  // 4
-        {XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 1.0f)},   // 5
-        {XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT3(1.0f, 1.0f, 1.0f)},    // 6
-        {XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT3(1.0f, 0.0f, 1.0f)}    // 7
+        { XMFLOAT4(-1.0f, -1.0f, -1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) }, // 0
+        { XMFLOAT4(-1.0f,  1.0f, -1.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) }, // 1
+        { XMFLOAT4( 1.0f,  1.0f, -1.0f, 1.0f), XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f) }, // 2
+        { XMFLOAT4( 1.0f, -1.0f, -1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) }, // 3
+        { XMFLOAT4(-1.0f, -1.0f,  1.0f, 1.0f), XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) }, // 4
+        { XMFLOAT4(-1.0f,  1.0f,  1.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f) }, // 5
+        { XMFLOAT4( 1.0f,  1.0f,  1.0f, 1.0f), XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f) }, // 6
+        { XMFLOAT4( 1.0f, -1.0f,  1.0f, 1.0f), XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f) }  // 7
     };
 
     // 36 indices for cube (12 triangles)
@@ -134,46 +134,33 @@ void Application::init() {
 
     // pipeline
     // Root parameter for CBV
+    // CD3DX12_ROOT_PARAMETER cbvRootParam;
+    // cbvRootParam.InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+
     CD3DX12_ROOT_PARAMETER cbvRootParam;
-    cbvRootParam.InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+    cbvRootParam.InitAsConstantBufferView(0, 0, D3D12_SHADER_VISIBILITY_ALL);
 
     std::vector<D3D12_INPUT_ELEMENT_DESC> inputLayout = {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
     };
 
     std::vector<D3D12_ROOT_PARAMETER> rootParams = { cbvRootParam };
 
-    auto vertexShader = Shader(L"assets/shaders/vertex.hlsl", "vsmain", "vs_5_0");
-    auto pixelShader = Shader(L"assets/shaders/pixel.hlsl", "psmain", "ps_5_0");
+    auto vertexShader = Shader(L"assets/shaders/vertex.cso");
+    auto pixelShader = Shader(L"assets/shaders/pixel.cso");
 
-    auto checkShaderBytecode = [](const Shader& shader, const std::wstring& name) {
-        auto bytecode = shader.getBytecode();
-        if (!bytecode || bytecode->GetBufferSize() == 0) {
-            LOG_ERROR(L"%s shader bytecode is null or empty!", name.c_str());
-            throw std::runtime_error("Shader compilation failed");
-        } else {
-            LOG_INFO(L"%s shader compiled successfully. Bytecode size: %llu bytes", name.c_str(), bytecode->GetBufferSize());
-        }
-
-        auto errorBlob = shader.getErrorBlob();
-        if (errorBlob && errorBlob->GetBufferSize() > 0) {
-            std::string errMsg((char*)errorBlob->GetBufferPointer(), errorBlob->GetBufferSize());
-            OutputDebugStringA(errMsg.c_str());
-            LOG_WARNING(L"%s shader compilation warnings/errors:\n%S", name.c_str(), errMsg.c_str());
-        }
-    };
-
-    // Check vertex and pixel shaders
-    checkShaderBytecode(vertexShader, L"Vertex");
-    checkShaderBytecode(pixelShader, L"Pixel");
+    std::vector<D3D12_STATIC_SAMPLER_DESC> samplers{};
 
     pipeline1 = std::make_unique<Pipeline>(
         device->getDevice(),
         vertexShader,
         pixelShader,
         inputLayout,
-        rootParams
+        rootParams,
+        samplers,
+        DXGI_FORMAT_R8G8B8A8_UNORM,
+        DXGI_FORMAT_D24_UNORM_S8_UINT
     );
 }
 
@@ -204,7 +191,7 @@ int Application::run() {
             );
             onRender(renderArgs);
             
-            std::wstring title = L"DirectX12 App - " + timer.getFPSString();
+            std::wstring title = config.appName + timer.getFPSString();
             if (window) {
                 SetWindowTextW(window->getHwnd(), title.c_str());
             } else {
@@ -236,11 +223,11 @@ void Application::onUpdate(UpdateEventArgs& args)
 
 void Application::onRender(RenderEventArgs& args)
 {
-    // LOG_INFO(L"[onRender] Δt=%.4f sec | total=%.2f sec", args.elapsedTime, args.totalTime);
-
-    auto commandAllocator = directCommandQueue->getCommandAllocator();
+    // Get a command list from the queue; allocator is managed internally
     auto commandList = directCommandQueue->getCommandList();
     auto commandQueue = directCommandQueue->getCommandQueue();
+
+    LOG_INFO(L"CommandList obtained from queue");
 
     auto pipelineState = pipeline1->getPipelineState();
     auto rootSignature = pipeline1->getRootSignature();
@@ -253,21 +240,9 @@ void Application::onRender(RenderEventArgs& args)
 
     auto vsync = device->getSupportTearingState();
 
-    // Reset the queue -> allocator and list
-    throwFailed(
-        commandAllocator->Reset()
-    );
-    throwFailed(
-        commandList->Reset(
-            commandAllocator.Get(), 
-            pipelineState.Get()
-        )
-    );
-
     // Set root signature
-    commandList->SetGraphicsRootSignature(
-        rootSignature.Get()
-    );
+    commandList->SetGraphicsRootSignature(rootSignature.Get());
+    commandList->SetPipelineState(pipelineState.Get());
 
     // Update constant buffer (MVP)
     XMMATRIX model = XMMatrixIdentity();
@@ -278,76 +253,48 @@ void Application::onRender(RenderEventArgs& args)
     mvpData.mvp = XMMatrixTranspose(model * view * projection);
     constantBuffer1->update(&mvpData, sizeof(mvpData));
 
-    commandList->SetGraphicsRootConstantBufferView(
-        0, 
-        constantBuffer1->getGPUAddress()
-    );
+    commandList->SetGraphicsRootConstantBufferView(0, constantBuffer1->getGPUAddress());
 
     // Set viewport and scissor
     commandList->RSSetViewports(1, &viewport);
     commandList->RSSetScissorRects(1, &scissorRect);
 
-    // Indicate render target state
+    // Transition back buffer to render target
     auto backBuffer = swapchain->getBackBuffer(currentBackBufferIndex);
-    transitionResource(
-        commandList,
-        backBuffer.Get(),
-        D3D12_RESOURCE_STATE_PRESENT,
-        D3D12_RESOURCE_STATE_RENDER_TARGET
-    );
+    transitionResource(commandList, backBuffer.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     // Set RTV and DSV
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
-        rtvHeap->getHeap()->GetCPUDescriptorHandleForHeapStart(),
-        currentBackBufferIndex, 
-        rtvHeap->getDescriptorSize()
-    );
-
-    CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
-        dsvHeap->getHeap()->GetCPUDescriptorHandleForHeapStart()
-    );
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap->getHeap()->GetCPUDescriptorHandleForHeapStart(), currentBackBufferIndex, rtvHeap->getDescriptorSize());
+    CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(dsvHeap->getHeap()->GetCPUDescriptorHandleForHeapStart());
 
     commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
-    // Clear render target and depth buffer
+    // Clear render target and depth stencil
     const float clearColor[] = { 0.2f, 0.2f, 0.4f, 1.0f };
     commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-    /* Drawing the Triangles -> or where the main drawing happens especially with rendering models */
-    // Set primitive topology
+    // Draw geometry
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    // Bind vertex/index buffers
-    commandList->IASetVertexBuffers(0, 1, &vertex->getView());
-    commandList->IASetIndexBuffer(&index->getView());
-
-    // Draw
+    auto vbView = vertex->getView();
+    commandList->IASetVertexBuffers(0, 1, &vbView);
+    auto ibView = index->getView();
+    commandList->IASetIndexBuffer(&ibView);
     commandList->DrawIndexedInstanced(index->getCount(), 1, 0, 0, 0);
 
-    // Present
-    transitionResource(
-        commandList,
-        backBuffer.Get(),
-        D3D12_RESOURCE_STATE_RENDER_TARGET,
-        D3D12_RESOURCE_STATE_PRESENT
-    );
+    // Transition back buffer to present
+    transitionResource(commandList, backBuffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 
+    // Execute command list and present
     fenceValues[currentBackBufferIndex] = directCommandQueue->executeCommandList(commandList);
 
     INT syncInterval = vsync ? 1 : 0;
     UINT presentFlags = !vsync ? DXGI_PRESENT_ALLOW_TEARING : 0;
-
-    throwFailed(
-        swapchain->getSwapchain()->Present(
-            syncInterval,
-            presentFlags
-        )
-    );
+    throwFailed(swapchain->getSwapchain()->Present(syncInterval, presentFlags));
 
     currentBackBufferIndex = swapchain->getSwapchain()->GetCurrentBackBufferIndex();
 
-    // the CPU immediately waits for the GPU to finish this frame before moving on
+    // Wait for GPU to finish frame
     directCommandQueue->fenceWait(fenceValues[currentBackBufferIndex]);
 }
 
@@ -366,9 +313,100 @@ void Application::transitionResource(
     commandList->ResourceBarrier(1, &barrier);
 }
 
-void Application::onResize(UINT width, UINT height)
+void Application::onResize(ResizeEventArgs& args)
 {
-    // LOG_INFO(L"Application resize: %dx%d", width, height);
-    // Resize swapchain & depth buffer here
-    // swapchain->resize()
+    if (!device || !swapchain)
+        return;
+
+    // Skip if minimized
+    if (args.width == 0 || args.height == 0)
+    {
+        LOG_INFO(L"Resize skipped (window minimized: %dx%d)", args.width, args.height);
+        return;
+    }
+
+    // Only resize if size actually changed
+    if (config.width != args.width || config.height != args.height) {
+        config.width = std::max(1u, static_cast<unsigned int>(args.width));
+        config.height = std::max(1u, static_cast<unsigned int>(args.height));
+
+        // Wait for GPU to finish any in-flight commands
+        directCommandQueue->flush();
+
+        // Resize swap chain buffers
+        swapchain->resize(config.width, config.height);
+
+        // Reset back buffer index after resize
+        currentBackBufferIndex = swapchain->getSwapchain()->GetCurrentBackBufferIndex();
+
+        // Update camera projection
+        camera1->setProjection(
+            45.0f,
+            float(config.width) / float(config.height),
+            0.1f,
+            100.0f
+        );
+
+        // Update viewport + scissor rect
+        viewport = { 0.0f, 0.0f, float(config.width), float(config.height), 0.0f, 1.0f };
+        scissorRect = { 0, 0, static_cast<LONG>(config.width), static_cast<LONG>(config.height) };
+
+        LOG_INFO(L"Application resized to %dx%d", config.width, config.height);
+    }
+}
+
+
+void Application::cleanUp() {
+    LOG_INFO(L"Application cleanup started.");
+
+    if (directCommandQueue) {
+        LOG_INFO(L"Flushing GPU commands before releasing resources...");
+        directCommandQueue->flush(); // ensure GPU has finished all work
+    }
+
+    // Reset resources in reverse creation order
+    if (mesh) {
+        mesh.reset();
+        LOG_INFO(L"Mesh released.");
+    }
+
+    if (constantBuffer1) {
+        constantBuffer1.reset();
+        LOG_INFO(L"Constant buffer released.");
+    }
+
+    if (pipeline1) {
+        pipeline1.reset();
+        LOG_INFO(L"Pipeline released.");
+    }
+
+    if (camera1) {
+        camera1.reset();
+        LOG_INFO(L"Camera released.");
+    }
+
+    if (swapchain) {
+        // Wait for GPU to finish using back buffers before releasing
+        directCommandQueue->flush();
+
+        swapchain.reset();
+        LOG_INFO(L"Swapchain released.");
+    }
+
+    if (directCommandQueue) {
+        directCommandQueue.reset();
+        LOG_INFO(L"Command queue released.");
+    }
+
+    if (device) {
+        device.reset();
+        LOG_INFO(L"Device released.");
+    }
+
+    if (window) {
+        window.reset();
+        LOG_INFO(L"Window released.");
+    }
+
+    LOG_INFO(L"Application cleanup finished.");
 }

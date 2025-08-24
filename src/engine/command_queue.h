@@ -2,81 +2,55 @@
 
 #include "utils/pch.h"
 #include <queue>
-
-// apparently every part of the commands have to be centralized and stored in the command queue 
-// cuase there are multiple command allocators
-// To::Do::need to find a work around this or a better and cleaner way of doing this
+#include <unordered_map>
 
 class CommandQueue {
-    public:
-        CommandQueue(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type);
-        ~CommandQueue() = default;
+public:
+    CommandQueue(ComPtr<ID3D12Device2> device, D3D12_COMMAND_LIST_TYPE type);
+    ~CommandQueue();
 
-        // allocator
-        ComPtr<ID3D12CommandAllocator> createCommandAllocator();
+    // Command Allocator
+    ComPtr<ID3D12CommandAllocator> createCommandAllocator();
 
-        // list
-        ComPtr<ID3D12GraphicsCommandList2> createCommandList(
-            ComPtr<ID3D12CommandAllocator> allocator
-        );
+    // Command List
+    ComPtr<ID3D12GraphicsCommandList2> createCommandList(ComPtr<ID3D12CommandAllocator> allocator);
+    ComPtr<ID3D12GraphicsCommandList2> getCommandList();
+    UINT64 executeCommandList(ComPtr<ID3D12GraphicsCommandList2> commandList);
 
-        ComPtr<ID3D12GraphicsCommandList2> getCommandList();
+    // Fence
+    UINT64 signalFence();
+    void fenceWait(UINT64 value);
+    void fenceFlush(UINT64 value);
+    bool isFenceComplete(UINT64 value);
+    void flush();
 
-        UINT64 executeCommandList(ComPtr<ID3D12GraphicsCommandList2> commandList);
+    // Getters
+    ComPtr<ID3D12CommandQueue> getCommandQueue() const { return queue; }
+    ComPtr<ID3D12Fence> getFence() const { return fence; }
+    UINT64 getFenceValue() const { return fenceValue; }
+    HANDLE getFenceHandle() const { return fenceEvent; }
 
-        // fence
-
-        UINT64 signalFence();
-
-        void fenceWait(UINT64 value);
-
-        void fenceFlush(UINT64 value);
-
-        void flush();
-
-        bool isFenceComplete(UINT64 value);
-
-        // getters
-        ComPtr<ID3D12CommandQueue> getCommandQueue() const {
-            return queue;
-        }
-
-        ComPtr<ID3D12CommandAllocator> getCommandAllocator() const {
-            return allocator;
-        }  
-
-        ComPtr<ID3D12Fence> getFence() const {
-            return fence;
-        }
-
-        UINT64 getFenceValue() const {
-            return fenceValue;
-        }
-
-        HANDLE getFenceHandle() const {
-            return fenceEvent;
-        }
-        
-    private:
-        ComPtr<ID3D12Device2> device;
-        ComPtr<ID3D12CommandQueue> queue;
-        ComPtr<ID3D12CommandAllocator> allocator;
-        ComPtr<ID3D12GraphicsCommandList2> list;
-
-        D3D12_COMMAND_LIST_TYPE type;
-
-        // Keep track of command allocators that are "in-flight"
-        struct AllocatorEntry
-        {
-            UINT64 fenceValue = 0;
-            ComPtr<ID3D12CommandAllocator> allocator;
-        };
-        
-        std::queue<AllocatorEntry> allocatorQueue;
-        std::queue<ComPtr<ID3D12GraphicsCommandList2>> listQueue;
-
-        // fence
-        ComPtr<ID3D12Fence> fence;
+private:
+    struct AllocatorEntry {
         UINT64 fenceValue = 0;
-        HANDLE fenceEvent = nullptr;
+        ComPtr<ID3D12CommandAllocator> allocator;
+    };
+
+    struct ListEntry {
+        ComPtr<ID3D12GraphicsCommandList2> list;
+        ComPtr<ID3D12CommandAllocator> allocator;
+    };
+
+    ComPtr<ID3D12Device2> device;
+    ComPtr<ID3D12CommandQueue> queue;
+
+    D3D12_COMMAND_LIST_TYPE type;
+
+    std::queue<AllocatorEntry> allocatorQueue;
+    std::queue<ListEntry> listQueue;
+    std::unordered_map<ID3D12GraphicsCommandList2*, ComPtr<ID3D12CommandAllocator>> liveListAllocMap;
+
+    ComPtr<ID3D12Fence> fence;
+    UINT64 fenceValue = 0;
+    HANDLE fenceEvent = nullptr;
 };

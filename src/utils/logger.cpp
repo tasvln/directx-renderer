@@ -1,10 +1,10 @@
-#include "pch.h"
+#include "logger.h"
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <iostream>
 
 Logger::Logger() {
-    // Default log path - create logs folder and app.log
     std::wstring logDir = L"logs";
     CreateDirectoryW(logDir.c_str(), nullptr);
     setLogFilePath(logDir + L"\\engine.log");
@@ -22,26 +22,21 @@ Logger& Logger::instance() {
 
 void Logger::setLogFilePath(const std::wstring& path) {
     std::lock_guard<std::mutex> lock(mutex);
-    if (file.is_open())
-        file.close();
-
+    if (file.is_open()) file.close();
     file.open(path, std::ios_base::app);
 }
 
 void Logger::log(LogType level, const char* file, const char* function, int line, const wchar_t* format, ...) {
     wchar_t buffer[4096];
-
     va_list args;
     va_start(args, format);
-    vswprintf_s(buffer, sizeof(buffer) / sizeof(wchar_t), format, args);
+    vswprintf_s(buffer, sizeof(buffer)/sizeof(wchar_t), format, args);
     va_end(args);
 
     std::wstring message = formatLogMessage(level, buffer, file, function, line);
-
     OutputDebugStringW(message.c_str());
     writeLog(message);
 }
-
 
 void Logger::writeLog(const std::wstring& message) {
     std::lock_guard<std::mutex> lock(mutex);
@@ -58,9 +53,7 @@ std::wstring Logger::formatLogMessage(LogType level, const std::wstring& msg, co
     localtime_s(&localTime, &timeT);
 
     std::wstringstream ss;
-    ss << L"[";
-    ss << std::put_time(&localTime, L"%Y-%m-%d %H:%M:%S");
-    ss << L"] ";
+    ss << L"[" << std::put_time(&localTime, L"%Y-%m-%d %H:%M:%S") << L"] ";
 
     switch (level) {
         case LogType::Info:    ss << L"[INFO]    "; break;
@@ -70,9 +63,31 @@ std::wstring Logger::formatLogMessage(LogType level, const std::wstring& msg, co
         default:               ss << L"[LOG]     "; break;
     }
 
-    // Convert char* file/function to wstring
     ss << L"[" << std::filesystem::path(file).filename().wstring() << L":" << line << L"] ";
     ss << msg << L"\n";
     return ss.str();
 }
+
+void Logger::dumpD3D12DebugMessages(ComPtr<ID3D12Device2> device) {
+#if defined(_DEBUG)
+    ComPtr<ID3D12InfoQueue> infoQueue;
+    if (SUCCEEDED(device.As(&infoQueue))) {
+        UINT64 num = infoQueue->GetNumStoredMessagesAllowedByRetrievalFilter();
+        for (UINT64 i = 0; i < num; ++i) {
+            SIZE_T messageLength = 0;
+            infoQueue->GetMessage(i, nullptr, &messageLength);
+
+            std::vector<char> bytes(messageLength);
+            auto message = reinterpret_cast<D3D12_MESSAGE*>(bytes.data());
+
+            if (SUCCEEDED(infoQueue->GetMessage(i, message, &messageLength))) {
+                std::cerr << "[D3D12 Debug] " << message->pDescription << std::endl;
+                Logger::instance().log(LogType::Error, __FILE__, __FUNCTION__, __LINE__, L"[D3D12 Debug] %S", message->pDescription);
+            }
+        }
+        infoQueue->ClearStoredMessages();
+    }
+#endif
+}
+
 

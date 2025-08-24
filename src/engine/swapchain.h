@@ -55,8 +55,9 @@ class Swapchain {
         ComPtr<IDXGISwapChain4> swapchain;
         ComPtr<ID3D12Device2> device;
         UINT bufferCount;
+        bool tearingSupport;
 
-        ComPtr<ID3D12Resource> backBuffers[FRAMEBUFFERCOUNT];
+        std::vector<ComPtr<ID3D12Resource>> backBuffers;
         ComPtr<ID3D12Resource> depthBuffer;
 
         std::unique_ptr<DescriptorHeap> rtvHeap;
