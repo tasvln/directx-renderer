@@ -16,7 +16,7 @@ class Window
 
         HWND createWindow(HINSTANCE hInstance);
 
-        void toggleFullscreen();
+        void onFullscreen();
         void setFullScreen(bool enable);
 
     private:

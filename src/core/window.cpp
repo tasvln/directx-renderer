@@ -128,7 +128,7 @@ void Window::setFullScreen(bool enable) {
     }
 }
 
-void Window::toggleFullscreen()
+void Window::onFullscreen()
 {
     setFullScreen(!config.fullscreen);
 }
@@ -174,11 +174,11 @@ LRESULT Window::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
             
         case WM_KEYDOWN:
             if (wParam == VK_F11) {
-                toggleFullscreen();
+                onFullscreen();
                 return 0;
             }
             else if (wParam == VK_ESCAPE && config.fullscreen) {
-                toggleFullscreen();
+                onFullscreen();
                 return 0;
             }
             break;
