@@ -90,6 +90,12 @@ struct WindowConfig {
     bool resizable = true;
 };
 
+struct CameraConfig {
+    float fov;
+    float nearZ;
+    float farZ;
+};
+
 struct alignas(16) VertexStruct {
     DirectX::XMFLOAT4 position;
     DirectX::XMFLOAT4 color;

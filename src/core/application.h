@@ -14,6 +14,7 @@ class Camera;
 class UpdateEventArgs;
 class RenderEventArgs;
 class ResizeEventArgs;
+class MouseWheelEventArgs;
 
 class Application
 {
@@ -29,6 +30,7 @@ class Application
         // main functions for rendering
         void onUpdate(UpdateEventArgs& args);
         void onRender(RenderEventArgs& args);
+        void onMouseWheel(MouseWheelEventArgs& args);
 
         void transitionResource(
             ComPtr<ID3D12GraphicsCommandList2> commandList,

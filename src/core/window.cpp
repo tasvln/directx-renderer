@@ -125,6 +125,46 @@ LRESULT Window::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
             }
             break;
 
+        // case WM_MOUSEMOVE:
+        //     if (app) {
+
+        //     }
+        //     break;
+
+        case WM_MOUSEWHEEL:
+            if (app) {
+                float zDelta = static_cast<float>(static_cast<int16_t>(HIWORD(wParam))) / static_cast<float>(WHEEL_DELTA);
+
+                short keyStates = static_cast<short>(LOWORD(wParam));
+
+                bool lButton = (keyStates & MK_LBUTTON) != 0;
+                bool rButton = (keyStates & MK_RBUTTON) != 0;
+                bool mButton = (keyStates & MK_MBUTTON) != 0;
+                bool shift   = (keyStates & MK_SHIFT)   != 0;
+                bool control = (keyStates & MK_CONTROL) != 0;
+
+                int x = static_cast<int>(SHORT(LOWORD(lParam)));
+                int y = static_cast<int>(SHORT(HIWORD(lParam)));
+
+                // Convert screen → client coords
+                POINT pt{ x, y };
+                ScreenToClient(hwnd, &pt);
+
+                MouseWheelEventArgs args(
+                    zDelta, 
+                    lButton, 
+                    mButton, 
+                    rButton, 
+                    control, 
+                    shift, 
+                    pt.x, 
+                    pt.y
+                );
+                
+                app->onMouseWheel(args);
+            }
+            break;
+
         case WM_DESTROY:
             PostQuitMessage(0);
             break;

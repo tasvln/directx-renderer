@@ -191,7 +191,7 @@ int Application::run() {
             );
             onRender(renderArgs);
             
-            std::wstring title = config.appName + timer.getFPSString();
+            std::wstring title = std::wstring(config.appName) + L" " + timer.getFPSString();
             if (window) {
                 SetWindowTextW(window->getHwnd(), title.c_str());
             } else {
@@ -205,21 +205,25 @@ int Application::run() {
 
 void Application::onUpdate(UpdateEventArgs& args)
 {
-    // LOG_INFO(L"[onUpdate] Δt=%.4f sec | total=%.2f sec", args.elapsedTime, args.totalTime);
-
     camera1->update(static_cast<float>(args.totalTime));
 
-    // Build MVP
-    XMMATRIX model = XMMatrixIdentity();
+    // Rotate the cube over time
+    float angleY = static_cast<float>(args.totalTime); 
+    float angleX = static_cast<float>(args.totalTime * 0.5f); 
+
+    XMMATRIX rotationY = XMMatrixRotationY(angleY);
+    XMMATRIX rotationX = XMMatrixRotationX(angleX);
+    XMMATRIX model = rotationX * rotationY;
+
     XMMATRIX view = camera1->getViewMatrix();
     XMMATRIX projection = camera1->getProjectionMatrix();
 
+    // Update Constant Buffer In GPU
     ConstantMVP mvpData;
     mvpData.mvp = XMMatrixTranspose(model * view * projection);
-
-    // Upload to GPU
-    constantBuffer1->update(&mvpData, sizeof(mvpData));
+    constantBuffer1->update(&mvpData, sizeof(mvpData)); // Upload to GPU
 }
+
 
 void Application::onRender(RenderEventArgs& args)
 {
@@ -227,32 +231,19 @@ void Application::onRender(RenderEventArgs& args)
     auto commandList = directCommandQueue->getCommandList();
     auto commandQueue = directCommandQueue->getCommandQueue();
 
-    LOG_INFO(L"CommandList obtained from queue");
-
     auto pipelineState = pipeline1->getPipelineState();
     auto rootSignature = pipeline1->getRootSignature();
-
     auto rtvHeap = swapchain->getRTVHeap();
     auto dsvHeap = swapchain->getDSVHeap();
-
     auto vertex = mesh->getVertex();
     auto index = mesh->getIndex();
-
     auto vsync = device->getSupportTearingState();
 
-    // Set root signature
-    commandList->SetGraphicsRootSignature(rootSignature.Get());
+    // Reset command list with current pipeline
     commandList->SetPipelineState(pipelineState.Get());
+    commandList->SetGraphicsRootSignature(rootSignature.Get());
 
-    // Update constant buffer (MVP)
-    XMMATRIX model = XMMatrixIdentity();
-    XMMATRIX view = camera1->getViewMatrix();
-    XMMATRIX projection = camera1->getProjectionMatrix();
-
-    ConstantMVP mvpData;
-    mvpData.mvp = XMMatrixTranspose(model * view * projection);
-    constantBuffer1->update(&mvpData, sizeof(mvpData));
-
+    // Set constant buffer (MVP updated in onUpdate)
     commandList->SetGraphicsRootConstantBufferView(0, constantBuffer1->getGPUAddress());
 
     // Set viewport and scissor
@@ -261,33 +252,38 @@ void Application::onRender(RenderEventArgs& args)
 
     // Transition back buffer to render target
     auto backBuffer = swapchain->getBackBuffer(currentBackBufferIndex);
-    transitionResource(commandList, backBuffer.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
+    transitionResource(commandList, backBuffer.Get(),
+                       D3D12_RESOURCE_STATE_PRESENT,
+                       D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-    // Set RTV and DSV
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap->getHeap()->GetCPUDescriptorHandleForHeapStart(), currentBackBufferIndex, rtvHeap->getDescriptorSize());
+    // Set render target and depth-stencil
+    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(rtvHeap->getHeap()->GetCPUDescriptorHandleForHeapStart(),
+                                            currentBackBufferIndex, rtvHeap->getDescriptorSize());
     CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(dsvHeap->getHeap()->GetCPUDescriptorHandleForHeapStart());
-
     commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
-    // Clear render target and depth stencil
-    const float clearColor[] = { 0.2f, 0.2f, 0.4f, 1.0f };
+    // Clear render target and depth-stencil
+    const float clearColor[] = {0.2f, 0.2f, 0.4f, 1.0f};
     commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-    // Draw geometry
+    // Draw the cube
     commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     auto vbView = vertex->getView();
-    commandList->IASetVertexBuffers(0, 1, &vbView);
     auto ibView = index->getView();
+    commandList->IASetVertexBuffers(0, 1, &vbView);
     commandList->IASetIndexBuffer(&ibView);
     commandList->DrawIndexedInstanced(index->getCount(), 1, 0, 0, 0);
 
     // Transition back buffer to present
-    transitionResource(commandList, backBuffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
+    transitionResource(commandList, backBuffer.Get(),
+                       D3D12_RESOURCE_STATE_RENDER_TARGET,
+                       D3D12_RESOURCE_STATE_PRESENT);
 
-    // Execute command list and present
+    // Execute command list
     fenceValues[currentBackBufferIndex] = directCommandQueue->executeCommandList(commandList);
 
+    // Present
     INT syncInterval = vsync ? 1 : 0;
     UINT presentFlags = !vsync ? DXGI_PRESENT_ALLOW_TEARING : 0;
     throwFailed(swapchain->getSwapchain()->Present(syncInterval, presentFlags));
@@ -355,6 +351,16 @@ void Application::onResize(ResizeEventArgs& args)
     }
 }
 
+void Application::onMouseWheel(MouseWheelEventArgs& e)
+{
+    if (e.control) {
+        // Ctrl + wheel → lens zoom (FOV)
+        camera1->setFov(camera1->getFov() - e.wheelDelta * 0.05f);
+    } else {
+        // Normal wheel → dolly zoom (radius)
+        camera1->zoom(-e.wheelDelta * 0.25f);
+    }
+}
 
 void Application::cleanUp() {
     LOG_INFO(L"Application cleanup started.");
