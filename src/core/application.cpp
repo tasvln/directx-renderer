@@ -351,14 +351,22 @@ void Application::onResize(ResizeEventArgs& args)
     }
 }
 
-void Application::onMouseWheel(MouseWheelEventArgs& e)
+void Application::onMouseWheel(MouseWheelEventArgs& args)
 {
-    if (e.control) {
+    // the zoom could be smoother in my opinion but it'd evolve over time...
+    if (args.control) {
         // Ctrl + wheel → lens zoom (FOV)
-        camera1->setFov(camera1->getFov() - e.wheelDelta * 0.05f);
+        camera1->setFov(camera1->getFov() - args.wheelDelta * 0.05f);
     } else {
         // Normal wheel → dolly zoom (radius)
-        camera1->zoom(-e.wheelDelta * 0.25f);
+        camera1->zoom(-args.wheelDelta * 0.25f);
+    }
+}
+
+void Application::onMouseMoved(MouseMotionEventArgs& args) {
+    if (args.leftButton)
+    {
+        camera1->orbit(args.relX * 0.01f, args.relY * 0.01f);
     }
 }
 

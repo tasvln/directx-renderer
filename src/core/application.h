@@ -15,6 +15,7 @@ class UpdateEventArgs;
 class RenderEventArgs;
 class ResizeEventArgs;
 class MouseWheelEventArgs;
+class MouseMotionEventArgs;
 
 class Application
 {
@@ -27,10 +28,11 @@ class Application
 
         void onResize(ResizeEventArgs& args);
 
-        // main functions for rendering
+        // main functions for rendering / callbacks
         void onUpdate(UpdateEventArgs& args);
         void onRender(RenderEventArgs& args);
         void onMouseWheel(MouseWheelEventArgs& args);
+        void onMouseMoved(MouseMotionEventArgs& args);
 
         void transitionResource(
             ComPtr<ID3D12GraphicsCommandList2> commandList,

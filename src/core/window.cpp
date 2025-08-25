@@ -125,11 +125,43 @@ LRESULT Window::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
             }
             break;
 
-        // case WM_MOUSEMOVE:
-        //     if (app) {
+        case WM_MOUSEMOVE:
+            if (app) {
+                short keyStates = static_cast<short>(LOWORD(wParam));
 
-        //     }
-        //     break;
+                bool lButton = (keyStates & MK_LBUTTON) != 0;
+                bool rButton = (keyStates & MK_RBUTTON) != 0;
+                bool mButton = (keyStates & MK_MBUTTON) != 0;
+                bool shift   = (keyStates & MK_SHIFT)   != 0;
+                bool control = (keyStates & MK_CONTROL) != 0;
+
+                int x = static_cast<int>(SHORT(LOWORD(lParam)));
+                int y = static_cast<int>(SHORT(HIWORD(lParam)));
+
+                static int lastX = x;
+                static int lastY = y;
+
+                int relX = x - lastX;
+                int relY = y - lastY;
+
+                lastX = x;
+                lastY = y;
+
+                MouseMotionEventArgs args(
+                    lButton, 
+                    mButton, 
+                    rButton, 
+                    control, 
+                    shift, 
+                    x, 
+                    y
+                );
+                args.relX = relX;
+                args.relY = relY;
+
+                app->onMouseMoved(args);
+            }
+            break;
 
         case WM_MOUSEWHEEL:
             if (app) {
