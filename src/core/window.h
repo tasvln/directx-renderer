@@ -16,6 +16,9 @@ class Window
 
         HWND createWindow(HINSTANCE hInstance);
 
+        void toggleFullscreen();
+        void setFullScreen(bool enable);
+
     private:
         static LRESULT CALLBACK wndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
         LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
@@ -23,6 +26,12 @@ class Window
     private:
         HWND hwnd = nullptr;
         WindowConfig config;
+
         RECT windowRect;
+        WINDOWPLACEMENT windowPlacement = { 
+            sizeof(WINDOWPLACEMENT) 
+        };
+
         Application* app = nullptr;
+        
 };

@@ -191,7 +191,7 @@ int Application::run() {
             );
             onRender(renderArgs);
             
-            std::wstring title = std::wstring(config.appName) + L" " + timer.getFPSString();
+            std::wstring title = std::wstring(config.appName) + L" - " + timer.getFPSString();
             if (window) {
                 SetWindowTextW(window->getHwnd(), title.c_str());
             } else {
@@ -208,13 +208,7 @@ void Application::onUpdate(UpdateEventArgs& args)
     camera1->update(static_cast<float>(args.totalTime));
 
     // Rotate the cube over time
-    float angleY = static_cast<float>(args.totalTime); 
-    float angleX = static_cast<float>(args.totalTime * 0.5f); 
-
-    XMMATRIX rotationY = XMMatrixRotationY(angleY);
-    XMMATRIX rotationX = XMMatrixRotationX(angleX);
-    XMMATRIX model = rotationX * rotationY;
-
+    XMMATRIX model = XMMatrixIdentity();
     XMMATRIX view = camera1->getViewMatrix();
     XMMATRIX projection = camera1->getProjectionMatrix();
 
@@ -223,7 +217,6 @@ void Application::onUpdate(UpdateEventArgs& args)
     mvpData.mvp = XMMatrixTranspose(model * view * projection);
     constantBuffer1->update(&mvpData, sizeof(mvpData)); // Upload to GPU
 }
-
 
 void Application::onRender(RenderEventArgs& args)
 {
@@ -263,7 +256,7 @@ void Application::onRender(RenderEventArgs& args)
     commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
     // Clear render target and depth-stencil
-    const float clearColor[] = {0.2f, 0.2f, 0.4f, 1.0f};
+    const float clearColor[] = {0.1f, 0.1f, 0.1f, 1.0f};
     commandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     commandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
@@ -359,7 +352,7 @@ void Application::onMouseWheel(MouseWheelEventArgs& args)
         camera1->setFov(camera1->getFov() - args.wheelDelta * 0.05f);
     } else {
         // Normal wheel → dolly zoom (radius)
-        camera1->zoom(-args.wheelDelta * 0.25f);
+        camera1->zoom(args.wheelDelta * 0.25f);
     }
 }
 

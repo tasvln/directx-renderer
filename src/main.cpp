@@ -21,11 +21,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     try
     {
         auto application = std::make_unique<Application>(hInstance, config);
-        int result = application->run();
-
-        std::cout << "Press Enter to exit..." << std::endl;
-        std::cin.get(); // wait before closing
-        return result;
+        return application->run();
     }
     catch (const std::exception &e)
     {

@@ -86,6 +86,53 @@ HWND Window::createWindow(HINSTANCE hInstance)
     );
 }
 
+void Window::setFullScreen(bool enable) {
+    if (config.fullscreen == enable) return; // nothing to do
+
+    config.fullscreen = enable;
+
+    if (enable) {
+        // Save current placement (size/pos/maximized state)
+        GetWindowPlacement(hwnd, &windowPlacement);
+
+        // Remove borders & caption
+        SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+
+        // Expand to monitor bounds
+        HMONITOR hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        MONITORINFOEX monitorInfo = { sizeof(MONITORINFOEX) };
+        GetMonitorInfo(hMonitor, &monitorInfo);
+
+        SetWindowPos(
+            hwnd,
+            HWND_TOP,
+            monitorInfo.rcMonitor.left,
+            monitorInfo.rcMonitor.top,
+            monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left,
+            monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top,
+            SWP_FRAMECHANGED | SWP_NOACTIVATE
+        );
+        ShowWindow(hwnd, SW_MAXIMIZE);
+    }
+    else {
+        // Restore borders
+        SetWindowLongW(hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+
+        // Restore placement (size/pos/max state)
+        SetWindowPlacement(hwnd, &windowPlacement);
+        SetWindowPos(
+            hwnd, HWND_NOTOPMOST, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED
+        );
+        ShowWindow(hwnd, SW_NORMAL);
+    }
+}
+
+void Window::toggleFullscreen()
+{
+    setFullScreen(!config.fullscreen);
+}
+
 LRESULT CALLBACK Window::wndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     Window* window = nullptr;
@@ -122,6 +169,17 @@ LRESULT Window::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 
                 ResizeEventArgs resizeArgs(width, height);
                 app->onResize(resizeArgs);
+            }
+            break;
+            
+        case WM_KEYDOWN:
+            if (wParam == VK_F11) {
+                toggleFullscreen();
+                return 0;
+            }
+            else if (wParam == VK_ESCAPE && config.fullscreen) {
+                toggleFullscreen();
+                return 0;
             }
             break;
 
