@@ -5,6 +5,8 @@ This project demonstrates a complete **DirectX 12 graphics pipeline** through a 
 
 <img width="1435" height="728" alt="Screenshot 2025-10-08 135345" src="https://github.com/user-attachments/assets/37297420-225e-4623-90dd-b10ce7d134a5" />
 
+https://github.com/user-attachments/assets/951ff221-0057-4971-8852-07725134a768
+
 ---
 
 ## Features
